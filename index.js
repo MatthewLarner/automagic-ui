@@ -1,13 +1,22 @@
+var predator = require('predator');
+
 var types = {
-    'button': ['button', 'a'],
-    'label': ['label', 'span', 'div']
-};
+        'button': ['button', 'a'],
+        'label': ['label', 'span', 'div']
+    },
+    noelementOfType = 'no elements of type ';
+
 
 function findUi(selectors) {
     return document.querySelectorAll(selectors);
 }
 
-function executeFindUi(value, type, done) {
+function executeFindUi(value, type, assertVisibility, done) {
+    window.predator = predator;
+    if(!done) {
+        done = assertVisibility;
+    }
+
     var elementTypes = types[type];
 
     if(!elementTypes) {
@@ -17,17 +26,24 @@ function executeFindUi(value, type, done) {
     var elements = findUi(elementTypes);
 
     if(!elements.length) {
-        return done(new Error('no elements of type ' + type));
+        return done(new Error(noelementOfType + type));
     } else {
         elements = Array.prototype.filter.call(elements, function(element) {
-            return ~element.innerText.toLowerCase().slice(0, value.length).indexOf(value.toLowerCase());
+            return ~element.innerText.toLowerCase()
+                        .slice(0, value.length)
+                        .indexOf(value.toLowerCase()) &&
+                        !predator(element).hidden;
         });
 
         if(!elements.length) {
-            done(new Error('no elements of type ' + type + ' with value of ' + value));
-        } else {
-            done(null, elements);
+            return done(new Error(noelementOfType + type + ' with value of ' + value));
         }
+
+        if(elements.length > 1) {
+            return done(new Error('more than one visible element of type ' + type + ' with value of ' + value));
+        }
+
+        done(null, elements);
     }
 }
 
@@ -72,8 +88,6 @@ function runTasks(tasks, callback) {
                 }
             }
         });
-    } else {
-        console.log(arguments)
     }
 }
 
@@ -87,8 +101,8 @@ function driveUi(){
             });
             return driverFunctions;
         },
-        findUi: function(value, type){
-            tasks.push(executeFindUi.bind(null, value, type));
+        findUi: function(value, type, assertVisibility){
+            tasks.push(executeFindUi.bind(null, value, type, assertVisibility));
 
             return driverFunctions;
         },

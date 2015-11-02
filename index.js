@@ -23,38 +23,34 @@ function executeFindUi(value, type, done) {
     if(!elements.length) {
         return done(new Error(noelementOfType + type));
     } else {
-        elements = Array.prototype.filter.call(elements, function(element) {
-            return ~element.innerText.toLowerCase()
-                        .slice(0, value.length)
-                        .indexOf(value.toLowerCase()) &&
-                        !predator(element).hidden;
-        });
+        var element;
 
-        if(!elements.length) {
+        for(var i = 0; i < elements.length; i++) {
+            var currentElement = elements[i];
+
+            if(currentElement.textContent.toLowerCase() === value.toLowerCase() && !predator(currentElement).hidden) {
+                element = currentElement;
+                break;
+            }
+        }
+
+        if(!element) {
             return done(new Error(noelementOfType + type + ' with value of ' + value));
         }
 
-        if(elements.length > 1) {
-            return done(new Error('more than one visible element of type ' + type + ' with value of ' + value));
-        }
-
-        done(null, elements);
+        done(null, element);
     }
 }
 
 function executeClick(value, type, done) {
-    executeFindUi(value, type, function(error, elements) {
+    executeFindUi(value, type, function(error, element) {
         if(error) {
             done(error);
         } else {
-            var clickElement;
+            var rect = element.getBoundingClientRect();
 
-            for(var i = 0; i < elements.length; i++) {
-                if (typeof elements[i].click === 'function') {
-                    clickElement = elements[i];
-                    break;
-                }
-            }
+            var clickElement = document.elementFromPoint(rect.left, rect.top);
+            clickElement = (clickElement.textContent.toLowerCase() === value.toLowerCase()) && clickElement;
 
             if(!clickElement) {
                 done(new Error('no clickable element with type' + type + ' and value of ' + value));
@@ -92,7 +88,7 @@ function driveUi(){
     var driverFunctions = {
         navigate: function(location){
             tasks.push(function(done){
-                console.log(location);
+                console.log(location, done);
             });
             return driverFunctions;
         },

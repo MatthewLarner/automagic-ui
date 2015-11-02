@@ -11,12 +11,7 @@ function findUi(selectors) {
     return document.querySelectorAll(selectors);
 }
 
-function executeFindUi(value, type, assertVisibility, done) {
-    window.predator = predator;
-    if(!done) {
-        done = assertVisibility;
-    }
-
+function executeFindUi(value, type, done) {
     var elementTypes = types[type];
 
     if(!elementTypes) {
@@ -101,8 +96,8 @@ function driveUi(){
             });
             return driverFunctions;
         },
-        findUi: function(value, type, assertVisibility){
-            tasks.push(executeFindUi.bind(null, value, type, assertVisibility));
+        findUi: function(value, type){
+            tasks.push(executeFindUi.bind(null, value, type));
 
             return driverFunctions;
         },

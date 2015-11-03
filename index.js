@@ -2,13 +2,31 @@ var predator = require('predator');
 
 var types = {
         'button': ['button', 'a'],
-        'label': ['label', 'span', 'div']
+        'label': ['label', 'span', 'div'],
+        'image': ['img', 'svg']
     },
     noelementOfType = 'no elements of type ';
 
 
 function findUi(selectors) {
     return document.querySelectorAll(selectors);
+}
+
+
+function executeNavigate(location, done) {
+    var callbackTimer;
+
+    function handleWindowError(error) {
+        clearTimeout(callbackTimer);
+
+        done(error);
+        window.removeEventListener('error', handleWindowError);
+    }
+
+    window.addEventListener('error', handleWindowError);
+    window.location = location;
+
+    callbackTimer = setTimeout(done, 150);
 }
 
 function executeFindUi(value, type, done) {
@@ -87,23 +105,21 @@ function driveUi(){
 
     var driverFunctions = {
         navigate: function(location){
-            tasks.push(function(done){
-                console.log(location, done);
-            });
+            tasks.push(executeNavigate.bind(driverFunctions, location));
             return driverFunctions;
         },
         findUi: function(value, type){
-            tasks.push(executeFindUi.bind(null, value, type));
+            tasks.push(executeFindUi.bind(driverFunctions, value, type));
 
             return driverFunctions;
         },
         click: function(value, type){
-            tasks.push(executeClick.bind(null, value, type));
+            tasks.push(executeClick.bind(driverFunctions, value, type));
 
             return driverFunctions;
         },
         wait: function(time) {
-            tasks.push(executeWait.bind(null, time));
+            tasks.push(executeWait.bind(driverFunctions, time));
 
             return driverFunctions;
         },
@@ -113,6 +129,10 @@ function driveUi(){
             } else {
                 callback(new Error('No tasks defined'));
             }
+        },
+        do: function(driver){
+            tasks.push(driver.go);
+            return driverFunctions;
         }
     };
 

@@ -9,24 +9,23 @@ var types = {
     noelementOfType = 'no elements of type ';
 
 function executeKeyPress(key, element, done) {
-    setTimeout(function() {
-        var keydownEvent = new window.KeyboardEvent('keydown'),
-            keyupEvent = new window.KeyboardEvent('keyup'),
-            keypressEvent = new window.KeyboardEvent('keypress');
+    element.value += key;
 
-        var method = 'initKeyboardEvent' in keypressEvent ? 'initKeyboardEvent' : 'initKeyEvent';
+    var keydownEvent = new window.KeyboardEvent('keydown'),
+        keyupEvent = new window.KeyboardEvent('keyup'),
+        keypressEvent = new window.KeyboardEvent('keypress');
 
-        keydownEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
-        keyupEvent[method]('keyup', true, true, window, key, 3, true, false, true, false, false);
-        keypressEvent[method]('keypress', true, true, window, key, 3, true, false, true, false, false);
+    var method = 'initKeyboardEvent' in keydownEvent ? 'initKeyboardEvent' : 'initKeyEvent';
 
-        element.dispatchEvent(keydownEvent);
-        element.dispatchEvent(keyupEvent);
-        element.dispatchEvent(keypressEvent);
-        console.log(key);
+    keydownEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
+    keyupEvent[method]('keyup', true, true, window, key, 3, true, false, true, false, false);
+    keypressEvent[method]('keypress', true, true, window, key, 3, true, false, true, false, false);
 
-        done(null, element);
-    }, 150);
+    element.dispatchEvent(keydownEvent);
+    element.dispatchEvent(keyupEvent);
+    element.dispatchEvent(keypressEvent);
+
+    done(null, element);
 }
 
 function findUi(selectors) {

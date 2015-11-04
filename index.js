@@ -32,7 +32,7 @@ function findUi(selectors) {
     return document.querySelectorAll(selectors);
 }
 
-function executeNavigate(location, previousResult, done) {
+function executeNavigate(location, previousElement, done) {
     var callbackTimer;
 
     function handleWindowError(error) {
@@ -48,7 +48,7 @@ function executeNavigate(location, previousResult, done) {
     callbackTimer = setTimeout(done, 150);
 }
 
-function executeFindUi(value, type, previousResult, done) {
+function _findUi(value, type, previousElement, done) {
     var elementTypes = types[type];
 
     if(!elementTypes) {
@@ -79,50 +79,56 @@ function executeFindUi(value, type, previousResult, done) {
     }
 }
 
-function executeFocus(value, type, previousResult, done) {
-    executeFindUi(value, type, previousResult, function(error, element) {
-        if(error) {
-            return done(error);
-        }
-
-        element.focus();
-        done(null, element);
-    });
-}
-
 function executeSetValue(value, element, done) {
     element.value = value;
 
     done(null, element);
 }
 
-function executeClick(value, type, previousResult, done) {
-    executeFindUi(value, type, previousResult, function(error, element) {
+function executeWait(time, previousElement, done) {
+    setTimeout(done.bind(this, null, previousElement), time || 0);
+}
+
+function _click(value, type, previousElement, done) {
+    var rect = previousElement.getBoundingClientRect();
+
+    if(!previousElement.click) {
+        return done(new Error('no clickable element with type' + type + ' and value of ' + value));
+    }
+
+    previousElement.click();
+    done(null, previousElement);
+}
+
+function _focus(value, type, previousElement, done) {
+    previousElement.focus();
+
+    done(null, previousElement);
+}
+
+function _blur(value, type, previousElement, done) {
+    previousElement.blur();
+
+    done(null, previousElement);
+}
+
+function execute(task, value, type, previousElement, done) {
+    if(!value && previousElement) {
+        return task(value, type, previousElement, done);
+    }
+
+    _findUi(value, type, previousElement, function(error, element) {
         if(error) {
-            done(error);
-        } else {
-            var rect = element.getBoundingClientRect();
-
-            var clickElement = document.elementFromPoint(rect.left, rect.top);
-            clickElement = (clickElement.textContent.toLowerCase() === value.toLowerCase()) && clickElement;
-
-            if(!element.click) {
-                done(new Error('no clickable element with type' + type + ' and value of ' + value));
-            } else {
-                element.click();
-                done(null, element);
-            }
+            return done(error);
         }
+
+        task(value, type, element, done);
     });
 }
 
-function executeWait(time, previousResult, done) {
-    setTimeout(done.bind(this, null, previousResult), time || 0);
-}
-
-function runTasks(tasks, previousResult, callback) {
+function runTasks(tasks, previousElement, callback) {
     if(tasks.length) {
-        tasks.shift()(previousResult, function(error, result) {
+        tasks.shift()(previousElement, function(error, result) {
             if(error) {
                 return callback(error);
             } else {
@@ -145,17 +151,22 @@ function driveUi(){
             return driverFunctions;
         },
         findUi: function(value, type){
-            tasks.push(executeFindUi.bind(driverFunctions, value, type));
+            tasks.push(execute.bind(driverFunctions, _findUi, value, type));
 
             return driverFunctions;
         },
         focus: function(value, type) {
-            tasks.push(executeFocus.bind(driverFunctions, value, type));
+            tasks.push(execute.bind(driverFunctions, _focus, value, type));
+
+            return driverFunctions;
+        },
+        blur: function(value, type) {
+            tasks.push(execute.bind(driverFunctions, _blur, value, type));
 
             return driverFunctions;
         },
         click: function(value, type){
-            tasks.push(executeClick.bind(driverFunctions, value, type));
+            tasks.push(execute.bind(driverFunctions, _click, value, type));
 
             return driverFunctions;
         },

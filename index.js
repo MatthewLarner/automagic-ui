@@ -7,11 +7,18 @@ var types = {
     },
     noelementOfType = 'no elements of type ';
 
+function keyPress(key, element) {
+    setTimeout(function(){
+        var keypressEvent = new window.KeyboardEvent('keydown');
+        var method = 'initKeyboardEvent' in keypressEvent ? 'initKeyboardEvent' : 'initKeyEvent';
+        keypressEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
+        element.dispatchEvent(keypressEvent);
+    }, 0);
+}
 
 function findUi(selectors) {
     return document.querySelectorAll(selectors);
 }
-
 
 function executeNavigate(location, done) {
     var callbackTimer;
@@ -60,6 +67,17 @@ function executeFindUi(value, type, done) {
     }
 }
 
+function executeFocus(value, type, done) {
+    executeFindUi(value, type, function(error, element) {
+        if(error) {
+            return done(error);
+        }
+
+        element.focus();
+        done(null, element + ' focused');
+    });
+}
+
 function executeClick(value, type, done) {
     executeFindUi(value, type, function(error, element) {
         if(error) {
@@ -70,10 +88,10 @@ function executeClick(value, type, done) {
             var clickElement = document.elementFromPoint(rect.left, rect.top);
             clickElement = (clickElement.textContent.toLowerCase() === value.toLowerCase()) && clickElement;
 
-            if(!clickElement) {
+            if(!element.click) {
                 done(new Error('no clickable element with type' + type + ' and value of ' + value));
             } else {
-                clickElement.click();
+                element.click();
                 done(null, clickElement + ' clicked');
             }
         }
@@ -110,6 +128,11 @@ function driveUi(){
         },
         findUi: function(value, type){
             tasks.push(executeFindUi.bind(driverFunctions, value, type));
+
+            return driverFunctions;
+        },
+        focus: function(value, type) {
+            tasks.push(executeFocus.bind(driverFunctions, value, type));
 
             return driverFunctions;
         },

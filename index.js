@@ -3,24 +3,37 @@ var predator = require('predator');
 var types = {
         'button': ['button', 'a'],
         'label': ['label', 'span', 'div'],
-        'image': ['img', 'svg']
+        'image': ['img', 'svg'],
+        'field': ['input']
     },
     noelementOfType = 'no elements of type ';
 
-function keyPress(key, element) {
-    setTimeout(function(){
-        var keypressEvent = new window.KeyboardEvent('keydown');
+function executeKeyPress(key, element, done) {
+    setTimeout(function() {
+        var keydownEvent = new window.KeyboardEvent('keydown'),
+            keyupEvent = new window.KeyboardEvent('keyup'),
+            keypressEvent = new window.KeyboardEvent('keypress');
+
         var method = 'initKeyboardEvent' in keypressEvent ? 'initKeyboardEvent' : 'initKeyEvent';
-        keypressEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
+
+        keydownEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
+        keyupEvent[method]('keyup', true, true, window, key, 3, true, false, true, false, false);
+        keypressEvent[method]('keypress', true, true, window, key, 3, true, false, true, false, false);
+
+        element.dispatchEvent(keydownEvent);
+        element.dispatchEvent(keyupEvent);
         element.dispatchEvent(keypressEvent);
-    }, 0);
+        console.log(key);
+
+        done(null, element);
+    }, 150);
 }
 
 function findUi(selectors) {
     return document.querySelectorAll(selectors);
 }
 
-function executeNavigate(location, done) {
+function executeNavigate(location, previousResult, done) {
     var callbackTimer;
 
     function handleWindowError(error) {
@@ -36,7 +49,7 @@ function executeNavigate(location, done) {
     callbackTimer = setTimeout(done, 150);
 }
 
-function executeFindUi(value, type, done) {
+function executeFindUi(value, type, previousResult, done) {
     var elementTypes = types[type];
 
     if(!elementTypes) {
@@ -53,7 +66,7 @@ function executeFindUi(value, type, done) {
         for(var i = 0; i < elements.length; i++) {
             var currentElement = elements[i];
 
-            if(currentElement.textContent.toLowerCase() === value.toLowerCase() && !predator(currentElement).hidden) {
+            if((currentElement.textContent.toLowerCase() === value.toLowerCase() || currentElement.title.toLowerCase() === value.toLowerCase()) && !predator(currentElement).hidden) {
                 element = currentElement;
                 break;
             }
@@ -67,19 +80,25 @@ function executeFindUi(value, type, done) {
     }
 }
 
-function executeFocus(value, type, done) {
-    executeFindUi(value, type, function(error, element) {
+function executeFocus(value, type, previousResult, done) {
+    executeFindUi(value, type, previousResult, function(error, element) {
         if(error) {
             return done(error);
         }
 
         element.focus();
-        done(null, element + ' focused');
+        done(null, element);
     });
 }
 
-function executeClick(value, type, done) {
-    executeFindUi(value, type, function(error, element) {
+function executeSetValue(value, element, done) {
+    element.value = value;
+
+    done(null, element);
+}
+
+function executeClick(value, type, previousResult, done) {
+    executeFindUi(value, type, previousResult, function(error, element) {
         if(error) {
             done(error);
         } else {
@@ -92,26 +111,26 @@ function executeClick(value, type, done) {
                 done(new Error('no clickable element with type' + type + ' and value of ' + value));
             } else {
                 element.click();
-                done(null, clickElement + ' clicked');
+                done(null, element);
             }
         }
     });
 }
 
-function executeWait(time, done) {
-    setTimeout(done, time || 0);
+function executeWait(time, previousResult, done) {
+    setTimeout(done.bind(this, null, previousResult), time || 0);
 }
 
-function runTasks(tasks, callback) {
+function runTasks(tasks, previousResult, callback) {
     if(tasks.length) {
-        tasks.shift()(function(error, result) {
+        tasks.shift()(previousResult, function(error, result) {
             if(error) {
                 return callback(error);
             } else {
                 if(tasks.length === 0) {
                     callback(null, result);
                 } else {
-                    runTasks(tasks, callback);
+                    runTasks(tasks, result, callback);
                 }
             }
         });
@@ -141,6 +160,16 @@ function driveUi(){
 
             return driverFunctions;
         },
+        keyPress: function(value) {
+            tasks.push(executeKeyPress.bind(driverFunctions, value));
+
+            return driverFunctions;
+        },
+        setValue: function(value) {
+            tasks.push(executeSetValue.bind(driverFunctions, value));
+
+            return driverFunctions;
+        },
         wait: function(time) {
             tasks.push(executeWait.bind(driverFunctions, time));
 
@@ -148,7 +177,7 @@ function driveUi(){
         },
         go: function(callback) {
             if(tasks.length) {
-                runTasks(tasks, callback);
+                runTasks(tasks, null, callback);
             } else {
                 callback(new Error('No tasks defined'));
             }

@@ -5,6 +5,12 @@ window.onload = function(){
     test('do stuff', function(t) {
         driver()
             .click('I am a button')
+            .focus('test input', 'field')
+            .pressKey('1')
+            .wait(2000)
+            .pressKey('a')
+            .click('I am a button')
+            .blur()
             .go(function(error, result) {
                 t.plan(2);
 

@@ -3,6 +3,7 @@ var predator = require('predator');
 var types = {
         'button': ['button', 'a'],
         'label': ['label', 'span', 'div'],
+        'heading': ['h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg'],
         'field': ['input']
     },
@@ -90,10 +91,13 @@ function executeWait(time, previousElement, done) {
 }
 
 function _click(value, type, previousElement, done) {
-    var rect = previousElement.getBoundingClientRect();
+    var rect = previousElement.getBoundingClientRect(),
+        clickElement = document.elementFromPoint(rect.left, rect.top),
+        elementInClickElement = ~Array.prototype.indexOf.call(clickElement.children, previousElement);
 
-    if(!previousElement.click) {
-        return done(new Error('no clickable element with type' + type + ' and value of ' + value));
+    if
+    (!elementInClickElement && (clickElement !== previousElement)) {
+        return done(new Error('no clickable element with type ' + type + ' and value of ' + value));
     }
 
     previousElement.click();

@@ -4,12 +4,7 @@ var test = require('tape'),
 window.onload = function(){
     test('do stuff', function(t) {
         driver()
-            .click('I am a button', 'button')
-            .focus('test input', 'field')
-            .keyPress('1')
-            .wait(200)
-            .keyPress('a')
-            .blur()
+            .click('I am a button')
             .go(function(error, result) {
                 t.plan(2);
 

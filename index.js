@@ -1,34 +1,46 @@
 var predator = require('predator');
 
+// List of tagNames ordered by their likeliness to be the target of a click event
+var clickableWeighting = ['button', 'a', 'label', 'h1', 'h2', 'h3', 'h4', 'i', 'span'];
+
 var types = {
         'button': ['button', 'a'],
         'label': ['label', 'span', 'div'],
         'heading': ['h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg'],
-        'field': ['input']
+        'field': ['input'],
+        'all': ['*']
     },
     noelementOfType = 'no elements of type ';
 
-function _keyPress(key, done) {
+function _pressKey(key, done) {
     var element = document.activeElement;
 
     element.value += key;
 
     var keydownEvent = new window.KeyboardEvent('keydown'),
         keyupEvent = new window.KeyboardEvent('keyup'),
-        keypressEvent = new window.KeyboardEvent('keypress');
+        pressKeyEvent = new window.KeyboardEvent('pressKey');
 
     var method = 'initKeyboardEvent' in keydownEvent ? 'initKeyboardEvent' : 'initKeyEvent';
 
     keydownEvent[method]('keydown', true, true, window, key, 3, true, false, true, false, false);
     keyupEvent[method]('keyup', true, true, window, key, 3, true, false, true, false, false);
-    keypressEvent[method]('keypress', true, true, window, key, 3, true, false, true, false, false);
+    pressKeyEvent[method]('pressKey', true, true, window, key, 3, true, false, true, false, false);
 
     element.dispatchEvent(keydownEvent);
     element.dispatchEvent(keyupEvent);
-    element.dispatchEvent(keypressEvent);
+    element.dispatchEvent(pressKeyEvent);
 
     done(null, element);
+}
+
+function _pressKeys(keys, done) {
+    keys.split('').forEach(function(key) {
+        _pressKey(key, function noop() {});
+    });
+
+    done(null, document.activeElement);
 }
 
 function findUi(selectors) {
@@ -51,7 +63,26 @@ function _navigate(location, previousElement, done) {
     callbackTimer = setTimeout(done, 150);
 }
 
-function _findUi(value, type, done) {
+function matchElementValue(element, value) {
+    return (
+            element.textContent.toLowerCase() === value.toLowerCase() ||
+            (element.title && element.title.toLowerCase() === value.toLowerCase())
+        ) && !predator(element).hidden;
+}
+
+function findMatchingElements(value, type, elementsList) {
+    return Array.prototype.slice.call(elementsList)
+        .filter(function(element) {
+            return matchElementValue(element, value);
+        });
+}
+
+function _findUi(value, type, returnArray, done) {
+    if(!done) {
+        done = returnArray;
+        returnArray = false;
+    }
+
     var elementTypes = types[type];
 
     if(!elementTypes) {
@@ -62,24 +93,15 @@ function _findUi(value, type, done) {
 
     if(!elements.length) {
         return done(new Error(noelementOfType + type));
-    } else {
-        var element;
-
-        for(var i = 0; i < elements.length; i++) {
-            var currentElement = elements[i];
-
-            if((currentElement.textContent.toLowerCase() === value.toLowerCase() || currentElement.title.toLowerCase() === value.toLowerCase()) && !predator(currentElement).hidden) {
-                element = currentElement;
-                break;
-            }
-        }
-
-        if(!element) {
-            return done(new Error(noelementOfType + type + ' with value of ' + value));
-        }
-
-        done(null, element);
     }
+
+    var result = findMatchingElements(value, type, elements);
+
+    if(!result) {
+        return done(new Error(noelementOfType + type + ' with value of ' + value));
+    }
+
+    done(null, returnArray ? result : result.shift());
 }
 
 function _setValue(value, element, done) {
@@ -102,8 +124,31 @@ function _click(element, done) {
     }
 
     element.click();
-    
+
     done(null, element);
+}
+
+function getElementClickWeight(element) {
+    var index = clickableWeighting.indexOf(element.tagName.toLowerCase());
+    return clickableWeighting.length - (index < 0 ? Infinity : index);
+}
+
+function executeClick(value, type, done) {
+    _findUi(value, 'all', true, function(error, elements) {
+        if(error) {
+            return done(error);
+        }
+
+        var element = elements.sort(function(a, b) {
+            return getElementClickWeight(a) < getElementClickWeight(b);
+        }).shift();
+
+        if(!element) {
+            return done(new Error('could not find clickable element with value ' + value));
+        }
+
+        _click(element, done);
+    });
 }
 
 function _focus(element, done) {
@@ -146,15 +191,16 @@ function runTasks(tasks, callback) {
 }
 
 function driveUi(){
-    var tasks = [];
+    var tasks = [],
+        driverFunctions = {};
 
-    var driverFunctions = {
+    driverFunctions = {
         navigate: function(location){
             tasks.push(_navigate.bind(driverFunctions, location));
             return driverFunctions;
         },
         findUi: function(value, type){
-            tasks.push(_findUi.bind(driverFunctions, _findUi, value, type));
+            tasks.push(_findUi.bind(driverFunctions, value, type));
 
             return driverFunctions;
         },
@@ -169,12 +215,17 @@ function driveUi(){
             return driverFunctions;
         },
         click: function(value, type){
-            tasks.push(execute.bind(driverFunctions, _click, value, type));
+            tasks.push(executeClick.bind(driverFunctions, value, type));
 
             return driverFunctions;
         },
-        keyPress: function(value) {
-            tasks.push(_keyPress.bind(driverFunctions, value));
+        pressKey: function(value) {
+            tasks.push(_pressKey.bind(driverFunctions, value));
+
+            return driverFunctions;
+        },
+        pressKeys: function(value) {
+            tasks.push(_pressKeys.bind(driverFunctions, value));
 
             return driverFunctions;
         },

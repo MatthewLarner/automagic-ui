@@ -12,8 +12,10 @@ var types = {
         'all': ['*']
     },
     noelementOfType = 'no elements of type ',
-    documentScope = document,
-    windowScope = window;
+    documentScope,
+    windowScope,
+    runDelay,
+    initialised;
 
 function _pressKey(key, done) {
     var element = documentScope.activeElement;
@@ -198,13 +200,9 @@ function runTasks(tasks, callback) {
     }
 }
 
-function driveUi(settings){
-    var runDelay = settings.runDelay || 1500,
-        tasks = [],
+function driveUi(){
+    var tasks = [],
         driverFunctions = {};
-
-    documentScope = settings.document || documentScope;
-    windowScope = settings.window || windowScope;
 
     function addTask(task){
         tasks.push(task);
@@ -251,6 +249,10 @@ function driveUi(settings){
             return addTask(driver.go);
         },
         go: function(callback) {
+            if(!initialised) {
+                throw(new Error('init must becalled before calling go'));
+            }
+
             if(tasks.length) {
                 tasks.unshift(_wait.bind(driverFunctions, runDelay));
                 runTasks(tasks, callback);
@@ -263,5 +265,12 @@ function driveUi(settings){
     return driverFunctions;
 }
 
+driveUi.init = function(settings) {
+    documentScope = settings.document || document;
+    windowScope = settings.window || window;
+    runDelay = settings.runDelay || 0;
+
+    initialised = true;
+};
 
 module.exports = driveUi;

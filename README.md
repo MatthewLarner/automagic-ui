@@ -34,3 +34,26 @@ driver()
         // result is the last element automagic-ui interacted with
     });
 ```
+
+Create some interactions and execute them later
+
+```javascript
+
+function findLoginForm() {
+    driver()
+        .findUi('login', 'field'),
+        .findUi('password', 'field'),
+        .findUi('submit', 'button')
+}
+
+driver()
+    .do(findLoginForm())
+    .focus('login')
+    .pressKeys('admin')
+    .focus('password')
+    .pressKeys('drowssap')
+    .click('submit', 'button')
+    .go(function(error, result) {
+        // Check stuff
+    })
+```

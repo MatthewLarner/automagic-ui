@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "watchify tests -o tests/index-browser.js && open tests/index.html"
+    "test": "browserify tests -o tests/index-browser.js && open tests/index.html"
   },
   "author": "",
   "license": "ISC",

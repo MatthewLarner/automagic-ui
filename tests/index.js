@@ -2,6 +2,10 @@ var test = require('tape'),
     driver = require('../');
 
 window.onload = function(){
+    driver.init({
+        runDelay: 750
+    });
+
     test('do stuff', function(t) {
         driver()
             .click('I am a button')

@@ -8,7 +8,7 @@ var types = {
         'label': ['label', 'span', 'div'],
         'heading': ['h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg'],
-        'field': ['input'],
+        'field': ['input', 'select'],
         'all': ['*']
     },
     noelementOfType = 'no elements of type ',

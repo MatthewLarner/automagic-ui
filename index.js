@@ -107,7 +107,7 @@ function _findUi(value, type, returnArray, done) {
 
     var result = findMatchingElements(value, type, elements);
 
-    if(!result) {
+    if(!result.length) {
         return done(new Error(noelementOfType + type + ' with value of ' + value));
     }
 

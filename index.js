@@ -167,6 +167,21 @@ function _focus(element, done) {
     done(null, element);
 }
 
+function _changeValue(selector, type, value, done) {
+    execute(_focus, selector, type, function(error, element) {
+        _pressKeys(value, function(error){
+            element.blur();
+
+            var event = document.createEvent('HTMLEvents');
+
+            event.initEvent('change', false, true);
+            element.dispatchEvent(event);
+
+            done(null, element);
+        });
+    });
+}
+
 function _blur(done) {
     var element = documentScope.activeElement;
     element.blur();
@@ -234,6 +249,9 @@ function driveUi(){
         },
         pressKeys: function(value) {
             return addTask(_pressKeys.bind(driverFunctions, value));
+        },
+        changeValue: function(selector, value, type) {
+            return addTask(_changeValue.bind(driverFunctions, selector, value, type));
         },
         setValue: function(value) {
             return addTask(_setValue.bind(driverFunctions, value));

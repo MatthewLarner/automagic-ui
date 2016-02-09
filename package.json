@@ -1,6 +1,6 @@
 {
   "name": "automagic-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automagic ui driver for web interfaces",
   "main": "index.js",
   "scripts": {

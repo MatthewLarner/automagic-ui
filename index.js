@@ -3,7 +3,7 @@ var scrollIntoView = require('scroll-into-view');
 
 // List of tagNames ordered by their likeliness to be the target of a click event
 var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button'];
-var clickWeighting = ['button', 'a', 'label', 'h1', 'h2', 'h3', 'h4', 'i', 'span'];
+var clickWeighting = ['button', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
 var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
@@ -44,15 +44,24 @@ function _pressKey(key, done) {
 }
 
 function _pressKeys(keys, done) {
-    String(keys).split('').forEach(function(key) {
-        _pressKey(key, function noop() {});
-    });
+    var nextKey = String(keys).charAt(0);
 
-    done(null, documentScope.activeElement);
+    if(nextKey === ''){
+        return done(null, documentScope.activeElement);
+    }
+
+    _pressKey(nextKey, function() {
+        setTimeout(function(){
+            _pressKeys(String(keys).slice(1), done);
+        }, 50);
+    });
 }
 
 function findUi(selectors) {
-    return documentScope.querySelectorAll(selectors);
+    return Array.prototype.slice.call(documentScope.querySelectorAll(selectors))
+        .sort(function(a, b){
+            return !a.contains(b) ? -1 : 0;
+        }); // deeper elements take precedence.
 }
 
 function _navigate(location, previousElement, done) {
@@ -172,12 +181,18 @@ function _wait(time, done) {
     setTimeout(done, time || 0);
 }
 
-function isClickable(element){
-    var rect = element.getBoundingClientRect(),
-        clickElement = documentScope.elementFromPoint(rect.left, rect.top),
-        elementInClickElement = ~Array.prototype.indexOf.call(clickElement.children, element);
+function findClickable(elements){
+    for(var i = 0; i < elements.length; i++){
+        var element = elements[i];
+            rect = element.getBoundingClientRect(),
+            clickElement = documentScope.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
+            clickElementInElement = element.contains(clickElement),
+            elementInClickElement = clickElement.contains(element);
 
-    return elementInClickElement || clickElement === element;
+        if(clickElementInElement || elementInClickElement || clickElement === element){
+            return clickElement;
+        }
+    }
 }
 
 function executeClick(value, type, done) {
@@ -186,14 +201,20 @@ function executeClick(value, type, done) {
             return done(error);
         }
 
-        var element = elements
+        var clickableElements = elements
             .sort(function(a, b) {
                 return getElementClickWeight(a) < getElementClickWeight(b);
-            })
-            .find(isClickable);
+            });
+
+        var element = findClickable(elements);
 
         if(!element) {
             return done(new Error('could not find clickable element matching "' + value + '"'));
+        }
+
+        // SVG paths
+        while(!element.click){
+            element = element.parentNode;
         }
 
         element.click();

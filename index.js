@@ -22,7 +22,7 @@ var types = {
     initialised;
 
 function _pressKey(key, done) {
-    var element = documentScope.activeElement;
+    var element = this.currentContext.activeElement;
 
     element.value += key;
 
@@ -44,21 +44,22 @@ function _pressKey(key, done) {
 }
 
 function _pressKeys(keys, done) {
-    var nextKey = String(keys).charAt(0);
+    var state = this,
+        nextKey = String(keys).charAt(0);
 
     if(nextKey === ''){
-        return done(null, documentScope.activeElement);
+        return done(null, this.currentContext.activeElement);
     }
 
-    _pressKey(nextKey, function() {
+    _pressKey.call(state, nextKey, function() {
         setTimeout(function(){
-            _pressKeys(String(keys).slice(1), done);
+            _pressKeys.call(state, String(keys).slice(1), done);
         }, 50);
     });
 }
 
-function findUi(selectors) {
-    return Array.prototype.slice.call(documentScope.querySelectorAll(selectors))
+function findUi(currentContex, selectors) {
+    return Array.prototype.slice.call(currentContex.querySelectorAll(selectors))
         .sort(function(a, b){
             return !a.contains(b) ? -1 : 0;
         }); // deeper elements take precedence.
@@ -127,7 +128,7 @@ function _findAllUi(value, type, done){
         return done(new Error(type + ' is not a valid ui type'));
     }
 
-    var elements = findUi(elementTypes);
+    var elements = findUi(this.currentContext, elementTypes);
 
     if(!elements.length) {
         return done(new Error(noElementOfType + type));
@@ -147,7 +148,7 @@ function _findUi(value, type, returnArray, done) {
         returnArray = false;
     }
 
-    _findAllUi(value, type, function(error, elements){
+    _findAllUi.call(this, value, type, function(error, elements){
         if(error){
             return done(error);
         }
@@ -166,7 +167,7 @@ function _findUi(value, type, returnArray, done) {
 }
 
 function _setValue(value, type, text, done) {
-    _focus(value, type, function(error, element) {
+    _focus.call(this, value, type, function(error, element) {
         if(error){
             return done(error);
         }
@@ -181,11 +182,11 @@ function _wait(time, done) {
     setTimeout(done, time || 0);
 }
 
-function findClickable(elements){
+function findClickable(currentContext, elements){
     for(var i = 0; i < elements.length; i++){
         var element = elements[i];
             rect = element.getBoundingClientRect(),
-            clickElement = documentScope.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
+            clickElement = currentContext.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
             clickElementInElement = element.contains(clickElement),
             elementInClickElement = clickElement.contains(element);
 
@@ -196,7 +197,8 @@ function findClickable(elements){
 }
 
 function executeClick(value, type, done) {
-    _findUi(value, 'all', true, function(error, elements) {
+    var state = this;
+    _findUi.call(state, value, 'all', true, function(error, elements) {
         if(error) {
             return done(error);
         }
@@ -206,7 +208,7 @@ function executeClick(value, type, done) {
                 return getElementClickWeight(a) < getElementClickWeight(b);
             });
 
-        var element = findClickable(elements);
+        var element = findClickable(state.currentContext, elements);
 
         if(!element) {
             return done(new Error('could not find clickable element matching "' + value + '"'));
@@ -227,7 +229,7 @@ function executeClick(value, type, done) {
 }
 
 function _focus(value, type, done) {
-   _findUi(value, type, true, function(error, elements){
+   _findUi.call(this, value, type, true, function(error, elements){
         if(error){
             return done(error);
         }
@@ -245,12 +247,14 @@ function _focus(value, type, done) {
 }
 
 function _changeValue(value, type, text, done) {
-    _focus(value, type, function(error, element) {
+    var state = this;
+
+    _focus.call(state, value, type, function(error, element) {
         if(error){
             return done(error);
         }
 
-        _pressKeys(text, function(error){
+        _pressKeys.call(state, text, function(error){
             if(error){
                 return done(error);
             }
@@ -268,7 +272,7 @@ function _changeValue(value, type, text, done) {
 }
 
 function _getValue(value, type, done) {
-    _focus(value, type, function(error, element) {
+    _focus.call(this, value, type, function(error, element) {
         if(error){
             return done(error);
         }
@@ -278,14 +282,14 @@ function _getValue(value, type, done) {
 }
 
 function _blur(done) {
-    var element = documentScope.activeElement;
+    var element = this.currentContext.activeElement;
     element.blur();
 
     done(null, element);
 }
 
 function _scrollTo(value, type, done){
-    _findAllUi(value, type, function(error, elements) {
+    _findAllUi.call(this, value, type, function(error, elements) {
         if(error) {
             return done(error);
         }
@@ -316,10 +320,12 @@ function runTasks(state, tasks, callback) {
     }
 }
 
-function driveUi(){
+function driveUi(currentContext){
     var tasks = [],
         driverFunctions = {},
-        state = {};
+        state = {
+            currentContext: currentContext || documentScope
+        };
 
     function addTask(task){
         tasks.push(task);
@@ -370,6 +376,21 @@ function driveUi(){
         },
         do: function(driver){
             return addTask(driver.go);
+        },
+        in: function(value, type, addSubTasks){
+            return addTask(function(done){
+                _findUi.call(state, value, type, function(error, element){
+                    if(error){
+                        return done(error);
+                    }
+
+                    var newDriver = driveUi(element);
+
+                    addSubTasks(newDriver);
+
+                    newDriver.go(done);
+                });
+            });
         },
         check: function(task){
             return addTask(function(callback){

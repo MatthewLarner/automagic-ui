@@ -1,24 +1,28 @@
 var predator = require('predator');
+var scrollIntoView = require('scroll-into-view');
 
 // List of tagNames ordered by their likeliness to be the target of a click event
-var clickableWeighting = ['button', 'a', 'label', 'h1', 'h2', 'h3', 'h4', 'i', 'span'];
+var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button'];
+var clickWeighting = ['button', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
+var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
         'button': ['button', 'a'],
         'label': ['label', 'span', 'div'],
         'heading': ['h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg'],
-        'field': ['input', 'select'],
-        'all': ['*']
+        'field': ['input', 'textarea', 'select', 'label'],
+        'all': ['*'],
+        'text': ['*']
     },
-    noelementOfType = 'no elements of type ',
+    noElementOfType = 'no elements of type ',
     documentScope,
     windowScope,
     runDelay,
     initialised;
 
 function _pressKey(key, done) {
-    var element = documentScope.activeElement;
+    var element = this.currentContext.activeElement;
 
     element.value += key;
 
@@ -40,15 +44,25 @@ function _pressKey(key, done) {
 }
 
 function _pressKeys(keys, done) {
-    keys.split('').forEach(function(key) {
-        _pressKey(key, function noop() {});
-    });
+    var state = this,
+        nextKey = String(keys).charAt(0);
 
-    done(null, documentScope.activeElement);
+    if(nextKey === ''){
+        return done(null, this.currentContext.activeElement);
+    }
+
+    _pressKey.call(state, nextKey, function() {
+        setTimeout(function(){
+            _pressKeys.call(state, String(keys).slice(1), done);
+        }, 50);
+    });
 }
 
-function findUi(selectors) {
-    return documentScope.querySelectorAll(selectors);
+function findUi(currentContex, selectors) {
+    return Array.prototype.slice.call(currentContex.querySelectorAll(selectors))
+        .sort(function(a, b){
+            return !a.contains(b) ? -1 : 0;
+        }); // deeper elements take precedence.
 }
 
 function _navigate(location, previousElement, done) {
@@ -77,7 +91,7 @@ function matchElementValue(element, value) {
     return (
             element.textContent.toLowerCase() === value.toLowerCase() ||
             (element.title && element.title.toLowerCase() === value.toLowerCase())
-        ) && !predator(element).hidden;
+        );
 }
 
 function findMatchingElements(value, type, elementsList) {
@@ -87,89 +101,164 @@ function findMatchingElements(value, type, elementsList) {
         });
 }
 
+function getElementTextWeight(element) {
+    var index = textWeighting.indexOf(element.tagName.toLowerCase());
+    return textWeighting.length - (index < 0 ? Infinity : index);
+}
+
+function getElementClickWeight(element) {
+    var index = clickWeighting.indexOf(element.tagName.toLowerCase());
+    return clickWeighting.length - (index < 0 ? Infinity : index);
+}
+
+function getElementValueWeight(element) {
+    var index = valueWeighting.indexOf(element.tagName.toLowerCase());
+    return valueWeighting.length - (index < 0 ? Infinity : index);
+}
+
+function _findAllUi(value, type, done){
+    if(!type){
+        type = 'all';
+    }
+
+    var elementTypes = types[type];
+
+
+    if(!elementTypes) {
+        return done(new Error(type + ' is not a valid ui type'));
+    }
+
+    var elements = findUi(this.currentContext, elementTypes);
+
+    if(!elements.length) {
+        return done(new Error(noElementOfType + type));
+    }
+
+    var results = findMatchingElements(value, type, elements)
+        .sort(function(a, b) {
+            return getElementTextWeight(a) < getElementTextWeight(b);
+        });
+
+    done(null, results);
+}
+
 function _findUi(value, type, returnArray, done) {
     if(!done) {
         done = returnArray;
         returnArray = false;
     }
 
-    var elementTypes = types[type];
+    _findAllUi.call(this, value, type, function(error, elements){
+        if(error){
+            return done(error);
+        }
 
-    if(!elementTypes) {
-        return done(new Error(type + ' is not a valid ui type'));
-    }
+        var results = Array.prototype.slice.call(elements)
+            .filter(function(element){
+                return !predator(element).hidden;
+            });
 
-    var elements = findUi(elementTypes);
+        if(!results.length){
+            return done(new Error('"' + value + '" was found but not visible on screen'));
+        }
 
-    if(!elements.length) {
-        return done(new Error(noelementOfType + type));
-    }
-
-    var result = findMatchingElements(value, type, elements);
-
-    if(!result.length) {
-        return done(new Error(noelementOfType + type + ' with value of ' + value));
-    }
-
-    done(null, returnArray ? result : result.shift());
+        done(null, returnArray ? results : results.shift());
+    });
 }
 
-function _setValue(value, element, done) {
-    element.value = value;
+function _setValue(value, type, text, done) {
+    _focus.call(this, value, type, function(error, element) {
+        if(error){
+            return done(error);
+        }
 
-    done(null, element);
+        element.value = text;
+
+        done(null, element);
+    });
 }
 
 function _wait(time, done) {
     setTimeout(done, time || 0);
 }
 
-function _click(element, done) {
-    var rect = element.getBoundingClientRect(),
-        clickElement = documentScope.elementFromPoint(rect.left, rect.top),
-        elementInClickElement = ~Array.prototype.indexOf.call(clickElement.children, element);
-    if
-    (!elementInClickElement && (clickElement !== element)) {
-        return done(new Error('no clickable element found'));
+function findClickable(currentContext, elements){
+    for(var i = 0; i < elements.length; i++){
+        var element = elements[i];
+            rect = element.getBoundingClientRect(),
+            clickElement = currentContext.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
+            clickElementInElement = element.contains(clickElement),
+            elementInClickElement = clickElement.contains(element);
+
+        if(clickElementInElement || elementInClickElement || clickElement === element){
+            return clickElement;
+        }
     }
-
-    element.click();
-
-    done(null, element);
-}
-
-function getElementClickWeight(element) {
-    var index = clickableWeighting.indexOf(element.tagName.toLowerCase());
-    return clickableWeighting.length - (index < 0 ? Infinity : index);
 }
 
 function executeClick(value, type, done) {
-    _findUi(value, 'all', true, function(error, elements) {
+    var state = this;
+    _findUi.call(state, value, 'all', true, function(error, elements) {
         if(error) {
             return done(error);
         }
 
-        var element = elements.sort(function(a, b) {
-            return getElementClickWeight(a) < getElementClickWeight(b);
-        }).shift();
+        var clickableElements = elements
+            .sort(function(a, b) {
+                return getElementClickWeight(a) < getElementClickWeight(b);
+            });
+
+        var element = findClickable(state.currentContext, elements);
 
         if(!element) {
-            return done(new Error('could not find clickable element with value ' + value));
+            return done(new Error('could not find clickable element matching "' + value + '"'));
         }
 
-        _click(element, done);
+        // SVG paths
+        while(!element.click){
+            element = element.parentNode;
+        }
+
+        element.click();
+
+        setTimeout(function(){
+            done(null, element);
+        }, clickDelay)
+
     });
 }
 
-function _focus(element, done) {
-    element.focus();
+function _focus(value, type, done) {
+   _findUi.call(this, value, type, true, function(error, elements){
+        if(error){
+            return done(error);
+        }
 
-    done(null, element);
+        var result = elements
+            .sort(function(a, b) {
+                return getElementValueWeight(a) < getElementValueWeight(b);
+            })
+            .shift();
+
+        result.focus();
+
+        done(null, result);
+   });
 }
 
-function _changeValue(selector, type, value, done) {
-    execute(_focus, selector, type, function(error, element) {
-        _pressKeys(value, function(error){
+function _changeValue(value, type, text, done) {
+    var state = this;
+
+    _focus.call(state, value, type, function(error, element) {
+        if(error){
+            return done(error);
+        }
+
+        _pressKeys.call(state, text, function(error){
+            if(error){
+                return done(error);
+            }
+
             element.blur();
 
             var event = document.createEvent('HTMLEvents');
@@ -182,42 +271,61 @@ function _changeValue(selector, type, value, done) {
     });
 }
 
+function _getValue(value, type, done) {
+    _focus.call(this, value, type, function(error, element) {
+        if(error){
+            return done(error);
+        }
+
+        done(null, 'value' in element ? element.value : element.textContent);
+    });
+}
+
 function _blur(done) {
-    var element = documentScope.activeElement;
+    var element = this.currentContext.activeElement;
     element.blur();
 
     done(null, element);
 }
 
-function execute(task, value, type, done) {
-    _findUi(value, type, function(error, element) {
+function _scrollTo(value, type, done){
+    _findAllUi.call(this, value, type, function(error, elements) {
         if(error) {
             return done(error);
         }
 
-        task(element, done);
+        var targetElement = elements.shift();
+
+        scrollIntoView(targetElement, function(){
+            done(null, targetElement);
+        });
     });
 }
 
-function runTasks(tasks, callback) {
+function runTasks(state, tasks, callback) {
     if(tasks.length) {
         tasks.shift()(function(error, result) {
             if(error) {
                 return callback(error);
             } else {
+                state.lastResult = result;
+
                 if(tasks.length === 0) {
                     callback(null, result);
                 } else {
-                    runTasks(tasks, callback);
+                    runTasks(state, tasks, callback);
                 }
             }
         });
     }
 }
 
-function driveUi(){
+function driveUi(currentContext){
     var tasks = [],
-        driverFunctions = {};
+        driverFunctions = {},
+        state = {
+            currentContext: currentContext || documentScope
+        };
 
     function addTask(task){
         tasks.push(task);
@@ -227,44 +335,70 @@ function driveUi(){
 
     driverFunctions = {
         navigate: function(location){
-            return addTask(_navigate.bind(driverFunctions, location));
+            return addTask(_navigate.bind(state, location));
         },
         findUi: function(value, type){
-            return addTask(_findUi.bind(driverFunctions, value, type));
+            return addTask(_findUi.bind(state, value, type));
         },
         getLocation: function() {
-            return addTask(_getLocation.bind(driverFunctions));
+            return addTask(_getLocation.bind(state));
         },
         focus: function(value, type) {
-            return addTask(execute.bind(driverFunctions, _focus, value, type));
+            return addTask(_focus.bind(state, value, type));
         },
         blur: function() {
-            return addTask(_blur.bind(driverFunctions));
+            return addTask(_blur.bind(state));
         },
         click: function(value, type){
-            return addTask(executeClick.bind(driverFunctions, value, type));
+            return addTask(executeClick.bind(state, value, type));
         },
         pressKey: function(value) {
-            return addTask(_pressKey.bind(driverFunctions, value));
+            return addTask(_pressKey.bind(state, value));
         },
         pressKeys: function(value) {
-            return addTask(_pressKeys.bind(driverFunctions, value));
+            return addTask(_pressKeys.bind(state, value));
         },
-        changeValue: function(selector, value, type) {
-            return addTask(_changeValue.bind(driverFunctions, selector, value, type));
+        changeValue: function(value, type, text) {
+            return addTask(_changeValue.bind(state, value, type, text));
         },
-        setValue: function(value) {
-            return addTask(_setValue.bind(driverFunctions, value));
+        setValue: function(value, type, text) {
+            return addTask(_setValue.bind(state, value, type, text));
+        },
+        getValue: function(value, type) {
+            return addTask(_getValue.bind(state, value, type));
         },
         wait: function(time) {
             if(!arguments.length) {
                 time = runDelay;
             }
 
-            return addTask(_wait.bind(driverFunctions, time));
+            return addTask(_wait.bind(state, time));
         },
         do: function(driver){
             return addTask(driver.go);
+        },
+        in: function(value, type, addSubTasks){
+            return addTask(function(done){
+                _findUi.call(state, value, type, function(error, element){
+                    if(error){
+                        return done(error);
+                    }
+
+                    var newDriver = driveUi(element);
+
+                    addSubTasks(newDriver);
+
+                    newDriver.go(done);
+                });
+            });
+        },
+        check: function(task){
+            return addTask(function(callback){
+                task(state.lastResult, callback);
+            });
+        },
+        scrollTo: function(value, type){
+            return addTask(_scrollTo.bind(state, value, type));
         },
         go: function(callback) {
             if(!initialised) {
@@ -272,8 +406,8 @@ function driveUi(){
             }
 
             if(tasks.length) {
-                tasks.unshift(_wait.bind(driverFunctions, runDelay));
-                runTasks(tasks, callback);
+                tasks.unshift(_wait.bind(state, runDelay));
+                runTasks(state, tasks, callback);
             } else {
                 callback(new Error('No tasks defined'));
             }
@@ -287,6 +421,7 @@ driveUi.init = function(settings) {
     documentScope = settings.document || document;
     windowScope = settings.window || window;
     runDelay = settings.runDelay || 0;
+    clickDelay = settings.clickDelay || 100;
 
     initialised = true;
 };

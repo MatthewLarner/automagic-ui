@@ -7,7 +7,7 @@ var clickWeighting = ['button', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'labe
 var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
-        'button': ['button', 'a'],
+        'button': ['button', 'a', 'input[type=button]'],
         'label': ['label', 'span', 'div'],
         'heading': ['h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg'],
@@ -87,11 +87,19 @@ function _getLocation(done) {
     }, 500);
 }
 
+function checkMatchValue(targetValue, value){
+    return targetValue && targetValue.toLowerCase().trim() === value;
+}
+
 function matchElementValue(element, value) {
+    value = value.toLowerCase();
+
     return (
-            element.textContent.toLowerCase() === value.toLowerCase() ||
-            (element.title && element.title.toLowerCase() === value.toLowerCase())
-        );
+        checkMatchValue(element.textContent, value) ||
+        checkMatchValue(element.title, value) ||
+        checkMatchValue(element.placeholder, value) ||
+        checkMatchValue(element.value, value)
+    );
 }
 
 function findMatchingElements(value, type, elementsList) {
@@ -151,6 +159,10 @@ function _findUi(value, type, returnArray, done) {
     _findAllUi.call(this, value, type, function(error, elements){
         if(error){
             return done(error);
+        }
+
+        if(!elements.length){
+            return done(new Error('"' + value + '" was not found'));
         }
 
         var results = Array.prototype.slice.call(elements)
@@ -281,6 +293,11 @@ function _getValue(value, type, done) {
     });
 }
 
+function _then(task, done) {
+    var state = this;
+    task(state.lastResult, done);
+}
+
 function _blur(done) {
     var element = this.currentContext.activeElement;
     element.blur();
@@ -292,6 +309,10 @@ function _scrollTo(value, type, done){
     _findAllUi.call(this, value, type, function(error, elements) {
         if(error) {
             return done(error);
+        }
+
+        if(!elements.length){
+            return done(new Error('"' + value + '" was not found'));
         }
 
         var targetElement = elements.shift();
@@ -376,6 +397,9 @@ function driveUi(currentContext){
         },
         do: function(driver){
             return addTask(driver.go);
+        },
+        then: function(task){
+            return addTask(_then.bind(state, task));
         },
         in: function(value, type, addSubTasks){
             return addTask(function(done){

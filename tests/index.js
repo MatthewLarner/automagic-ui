@@ -13,6 +13,10 @@ window.onload = function(){
             .pressKey('1')
             .wait(2000)
             .pressKey('a')
+            .then(function(result, callback){
+                console.log(result);
+                callback(null, result);
+            })
             .click('I am a button')
             .blur()
             .go(function(error, result) {

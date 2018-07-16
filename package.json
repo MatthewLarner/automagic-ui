@@ -4,7 +4,7 @@
   "description": "Automagic ui driver for web interfaces",
   "main": "index.js",
   "scripts": {
-    "test": "browserify tests -o tests/index-browser.js && open tests/index.html"
+    "test": "browserify tests -d -o tests/index-browser.js && xdg-open tests/index.html"
   },
   "repository": {
     "type": "git",

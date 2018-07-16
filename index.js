@@ -317,7 +317,7 @@ function _scrollTo(value, type, done){
 
         var targetElement = elements.shift();
 
-        scrollIntoView(targetElement, function(){
+        scrollIntoView(targetElement, { time: 50 }, function(){
             done(null, targetElement);
         });
     });

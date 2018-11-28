@@ -88,12 +88,14 @@ function _getLocation(done) {
 }
 
 function checkMatchValue(targetValue, value){
-    return targetValue && targetValue.toLowerCase().trim() === value;
+    if(value instanceof RegExp){
+        return targetValue && targetValue.match(value);
+    }
+
+    return targetValue && targetValue.toLowerCase().trim() === value.toLowerCase();
 }
 
 function matchElementValue(element, value) {
-    value = value.toLowerCase();
-
     return (
         checkMatchValue(element.textContent, value) ||
         checkMatchValue(element.title, value) ||

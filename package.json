@@ -1,10 +1,11 @@
 {
   "name": "automagic-ui",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "Automagic ui driver for web interfaces",
   "main": "index.js",
   "scripts": {
-    "test": "browserify tests -d -o tests/index-browser.js && xdg-open tests/index.html"
+    "test": "browserify tests -d -o tests/index-browser.js && xdg-open tests/index.html",
+    "build": "browserify tests -o tests/index-browser.js"
   },
   "repository": {
     "type": "git",

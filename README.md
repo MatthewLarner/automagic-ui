@@ -57,3 +57,14 @@ driver()
         // Check stuff
     })
 ```
+
+Target elements by RegExp
+
+```javascript
+
+driver()
+    .findUi(/Welcome .*/)
+    .go(function(error, result) {
+        // Welcome message for some user found
+    })
+```

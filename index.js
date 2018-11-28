@@ -89,8 +89,9 @@ function _getLocation(done) {
 
 function matchElementValue(element, value) {
     return (
-            element.textContent.toLowerCase() === value.toLowerCase() ||
-            (element.title && element.title.toLowerCase() === value.toLowerCase())
+            element.textContent.match(value) ||
+            (element.title && element.title.match(value)) ||
+            (element.placeholder && element.placeholder.match(value))
         );
 }
 

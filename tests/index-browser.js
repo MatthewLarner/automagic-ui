@@ -90,8 +90,9 @@ function _getLocation(done) {
 
 function matchElementValue(element, value) {
     return (
-            element.textContent.toLowerCase() === value.toLowerCase() ||
-            (element.title && element.title.toLowerCase() === value.toLowerCase())
+            element.textContent.match(value) ||
+            (element.title && element.title.match(value)) ||
+            (element.placeholder && element.placeholder.match(value))
         );
 }
 
@@ -429,7 +430,7 @@ driveUi.init = function(settings) {
 
 module.exports = driveUi;
 
-},{"predator":35,"scroll-into-view":55}],2:[function(require,module,exports){
+},{"predator":67,"scroll-into-view":54}],2:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -3983,76 +3984,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":37}],35:[function(require,module,exports){
-function findChildsExposedBox(child){
-    var originalBounds = child.getBoundingClientRect(),
-        parent = child.parentNode,
-        parentOverflow,
-        parentBounds,
-        bounds;
-
-    // Convert bounds object to pojo.
-    bounds = {
-        original: originalBounds,
-        height: originalBounds.height,
-        width: originalBounds.width,
-        left: originalBounds.left,
-        top: originalBounds.top,
-        right: originalBounds.right,
-        bottom: originalBounds.bottom
-    };
-
-    while(parent){
-        if(parent === document){
-            parentBounds = {
-                top: 0,
-                left: 0,
-                bottom: window.innerHeight,
-                right: window.innerWidth,
-                height: window.innerHeight,
-                width: window.innerWidth
-            };
-        }else{
-            var parentOverflow = window.getComputedStyle(parent).overflow;
-            if(parentOverflow === '' || parentOverflow === 'visible'){
-                parent = parent.parentNode;
-                continue;
-            }
-            parentBounds = parent.getBoundingClientRect();
-        }
-
-        if(parentBounds.top > bounds.top){
-            bounds.height = bounds.height - (parentBounds.top - bounds.top);
-            bounds.top = parentBounds.top;
-        }
-        if(parentBounds.left > bounds.left){
-            bounds.width = bounds.width - (parentBounds.left - bounds.left);
-            bounds.left = parentBounds.left;
-        }
-        if(parentBounds.right < bounds.right){
-            bounds.width = bounds.width - (bounds.right - parentBounds.right);
-            bounds.right = parentBounds.right;
-        }
-        if(parentBounds.bottom < bounds.bottom){
-            bounds.height = bounds.height - (bounds.bottom - parentBounds.bottom);
-            bounds.bottom = parentBounds.bottom;
-        }
-
-        if(bounds.width <= 0 || bounds.height <= 0){
-            bounds.hidden = true;
-            bounds.width = Math.max(bounds.width, 0);
-            bounds.height = Math.max(bounds.height, 0);
-            return bounds;
-        }
-
-        parent = parent.parentNode;
-    }
-
-    return bounds;
-}
-
-module.exports = findChildsExposedBox;
-},{}],36:[function(require,module,exports){
+},{"_process":36}],35:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -4099,7 +4031,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require('_process'))
-},{"_process":37}],37:[function(require,module,exports){
+},{"_process":36}],36:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -4285,10 +4217,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],38:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = require('./lib/_stream_duplex.js');
 
-},{"./lib/_stream_duplex.js":39}],39:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":38}],38:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4413,7 +4345,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
-},{"./_stream_readable":41,"./_stream_writable":43,"core-util-is":7,"inherits":27,"process-nextick-args":36}],40:[function(require,module,exports){
+},{"./_stream_readable":40,"./_stream_writable":42,"core-util-is":7,"inherits":27,"process-nextick-args":35}],39:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4461,7 +4393,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":42,"core-util-is":7,"inherits":27}],41:[function(require,module,exports){
+},{"./_stream_transform":41,"core-util-is":7,"inherits":27}],40:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5471,7 +5403,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./_stream_duplex":39,"./internal/streams/BufferList":44,"./internal/streams/destroy":45,"./internal/streams/stream":46,"_process":37,"core-util-is":7,"events":20,"inherits":27,"isarray":47,"process-nextick-args":36,"safe-buffer":54,"string_decoder/":48,"util":3}],42:[function(require,module,exports){
+},{"./_stream_duplex":38,"./internal/streams/BufferList":43,"./internal/streams/destroy":44,"./internal/streams/stream":45,"_process":36,"core-util-is":7,"events":20,"inherits":27,"isarray":46,"process-nextick-args":35,"safe-buffer":53,"string_decoder/":47,"util":3}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5686,7 +5618,7 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
-},{"./_stream_duplex":39,"core-util-is":7,"inherits":27}],43:[function(require,module,exports){
+},{"./_stream_duplex":38,"core-util-is":7,"inherits":27}],42:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -6353,7 +6285,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./_stream_duplex":39,"./internal/streams/destroy":45,"./internal/streams/stream":46,"_process":37,"core-util-is":7,"inherits":27,"process-nextick-args":36,"safe-buffer":54,"util-deprecate":66}],44:[function(require,module,exports){
+},{"./_stream_duplex":38,"./internal/streams/destroy":44,"./internal/streams/stream":45,"_process":36,"core-util-is":7,"inherits":27,"process-nextick-args":35,"safe-buffer":53,"util-deprecate":65}],43:[function(require,module,exports){
 'use strict';
 
 /*<replacement>*/
@@ -6428,7 +6360,7 @@ module.exports = function () {
 
   return BufferList;
 }();
-},{"safe-buffer":54}],45:[function(require,module,exports){
+},{"safe-buffer":53}],44:[function(require,module,exports){
 'use strict';
 
 /*<replacement>*/
@@ -6501,12 +6433,12 @@ module.exports = {
   destroy: destroy,
   undestroy: undestroy
 };
-},{"process-nextick-args":36}],46:[function(require,module,exports){
+},{"process-nextick-args":35}],45:[function(require,module,exports){
 module.exports = require('events').EventEmitter;
 
-},{"events":20}],47:[function(require,module,exports){
+},{"events":20}],46:[function(require,module,exports){
 arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],48:[function(require,module,exports){
+},{"dup":6}],47:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('safe-buffer').Buffer;
@@ -6779,10 +6711,10 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"safe-buffer":54}],49:[function(require,module,exports){
+},{"safe-buffer":53}],48:[function(require,module,exports){
 module.exports = require('./readable').PassThrough
 
-},{"./readable":50}],50:[function(require,module,exports){
+},{"./readable":49}],49:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -6791,13 +6723,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":39,"./lib/_stream_passthrough.js":40,"./lib/_stream_readable.js":41,"./lib/_stream_transform.js":42,"./lib/_stream_writable.js":43}],51:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":38,"./lib/_stream_passthrough.js":39,"./lib/_stream_readable.js":40,"./lib/_stream_transform.js":41,"./lib/_stream_writable.js":42}],50:[function(require,module,exports){
 module.exports = require('./readable').Transform
 
-},{"./readable":50}],52:[function(require,module,exports){
+},{"./readable":49}],51:[function(require,module,exports){
 module.exports = require('./lib/_stream_writable.js');
 
-},{"./lib/_stream_writable.js":43}],53:[function(require,module,exports){
+},{"./lib/_stream_writable.js":42}],52:[function(require,module,exports){
 (function (process){
 var through = require('through');
 var nextTick = typeof setImmediate !== 'undefined'
@@ -6830,7 +6762,7 @@ module.exports = function (write, end) {
 };
 
 }).call(this,require('_process'))
-},{"_process":37,"through":65}],54:[function(require,module,exports){
+},{"_process":36,"through":64}],53:[function(require,module,exports){
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
 var Buffer = buffer.Buffer
@@ -6894,7 +6826,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":5}],55:[function(require,module,exports){
+},{"buffer":5}],54:[function(require,module,exports){
 var COMPLETE = 'complete',
     CANCELED = 'canceled';
 
@@ -7093,7 +7025,7 @@ module.exports = function(target, settings, callback){
     }
 };
 
-},{}],56:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -7222,7 +7154,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":20,"inherits":27,"readable-stream/duplex.js":38,"readable-stream/passthrough.js":49,"readable-stream/readable.js":50,"readable-stream/transform.js":51,"readable-stream/writable.js":52}],57:[function(require,module,exports){
+},{"events":20,"inherits":27,"readable-stream/duplex.js":37,"readable-stream/passthrough.js":48,"readable-stream/readable.js":49,"readable-stream/transform.js":50,"readable-stream/writable.js":51}],56:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -7237,7 +7169,7 @@ module.exports = function trim() {
 	return replace(replace(S, leftWhitespace, ''), rightWhitespace, '');
 };
 
-},{"es-abstract/es5":13,"function-bind":24}],58:[function(require,module,exports){
+},{"es-abstract/es5":13,"function-bind":24}],57:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -7257,7 +7189,7 @@ define(boundTrim, {
 
 module.exports = boundTrim;
 
-},{"./implementation":57,"./polyfill":59,"./shim":60,"define-properties":11,"function-bind":24}],59:[function(require,module,exports){
+},{"./implementation":56,"./polyfill":58,"./shim":59,"define-properties":11,"function-bind":24}],58:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -7271,7 +7203,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":57}],60:[function(require,module,exports){
+},{"./implementation":56}],59:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -7283,7 +7215,7 @@ module.exports = function shimStringTrim() {
 	return polyfill;
 };
 
-},{"./polyfill":59,"define-properties":11}],61:[function(require,module,exports){
+},{"./polyfill":58,"define-properties":11}],60:[function(require,module,exports){
 (function (process){
 var defined = require('defined');
 var createDefaultStream = require('./lib/default_stream');
@@ -7438,7 +7370,7 @@ function createHarness (conf_) {
 }
 
 }).call(this,require('_process'))
-},{"./lib/default_stream":62,"./lib/results":63,"./lib/test":64,"_process":37,"defined":12,"through":65}],62:[function(require,module,exports){
+},{"./lib/default_stream":61,"./lib/results":62,"./lib/test":63,"_process":36,"defined":12,"through":64}],61:[function(require,module,exports){
 (function (process){
 var through = require('through');
 var fs = require('fs');
@@ -7472,7 +7404,7 @@ module.exports = function () {
 };
 
 }).call(this,require('_process'))
-},{"_process":37,"fs":4,"through":65}],63:[function(require,module,exports){
+},{"_process":36,"fs":4,"through":64}],62:[function(require,module,exports){
 (function (process){
 var defined = require('defined');
 var EventEmitter = require('events').EventEmitter;
@@ -7667,7 +7599,7 @@ function invalidYaml (str) {
 }
 
 }).call(this,require('_process'))
-},{"_process":37,"defined":12,"events":20,"function-bind":24,"has":25,"inherits":27,"object-inspect":31,"resumer":53,"through":65}],64:[function(require,module,exports){
+},{"_process":36,"defined":12,"events":20,"function-bind":24,"has":25,"inherits":27,"object-inspect":31,"resumer":52,"through":64}],63:[function(require,module,exports){
 (function (process,__dirname){
 var deepEqual = require('deep-equal');
 var defined = require('defined');
@@ -8174,7 +8106,7 @@ Test.skip = function (name_, _opts, _cb) {
 
 
 }).call(this,require('_process'),"/node_modules/tape/lib")
-},{"_process":37,"deep-equal":8,"defined":12,"events":20,"for-each":21,"function-bind":24,"has":25,"inherits":27,"path":34,"string.prototype.trim":58}],65:[function(require,module,exports){
+},{"_process":36,"deep-equal":8,"defined":12,"events":20,"for-each":21,"function-bind":24,"has":25,"inherits":27,"path":34,"string.prototype.trim":57}],64:[function(require,module,exports){
 (function (process){
 var Stream = require('stream')
 
@@ -8286,7 +8218,7 @@ function through (write, end, opts) {
 
 
 }).call(this,require('_process'))
-},{"_process":37,"stream":56}],66:[function(require,module,exports){
+},{"_process":36,"stream":55}],65:[function(require,module,exports){
 (function (global){
 
 /**
@@ -8357,7 +8289,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],67:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 var test = require('tape'),
     driver = require('../');
 
@@ -8371,7 +8303,7 @@ window.onload = function(){
             .click('I am a button')
             .focus('test input', 'field')
             .pressKey('1')
-            .wait(2000)
+            .wait(200)
             .pressKey('a')
             .click('I am a button')
             .blur()
@@ -8382,6 +8314,101 @@ window.onload = function(){
                 t.ok(result, 'got a result');
             });
     });
+
+    test('test placeholder', function(t) {
+        driver()
+            .focus('input with placeholder')
+            .pressKeys('test value')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.ok(result, 'got a result');
+            });
+    });
+
+    test('test regex', function(t) {
+        driver()
+            .focus(/.*test.*/i)
+            .pressKeys('test value')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.ok(result, 'got a result');
+            });
+    });
 };
 
-},{"../":1,"tape":61}]},{},[67]);
+},{"../":1,"tape":60}],67:[function(require,module,exports){
+function findChildsExposedBox(child){
+    var childWindow = (child.ownerDocument || child).defaultView,
+        childDocument = child.ownerDocument || child,
+        originalBounds = child.getBoundingClientRect(),
+        parent = child.parentNode,
+        parentOverflow,
+        parentBounds,
+        bounds;
+
+    // Convert bounds object to pojo.
+    bounds = {
+        original: originalBounds,
+        height: originalBounds.height,
+        width: originalBounds.width,
+        left: originalBounds.left,
+        top: originalBounds.top,
+        right: originalBounds.right,
+        bottom: originalBounds.bottom
+    };
+
+    while(parent){
+        if(parent === childDocument){
+            parentBounds = {
+                top: 0,
+                left: 0,
+                bottom: childWindow.innerHeight,
+                right: childWindow.innerWidth,
+                height: childWindow.innerHeight,
+                width: childWindow.innerWidth
+            };
+        }else{
+            var parentOverflow = childWindow.getComputedStyle(parent).overflow;
+            if(parentOverflow === '' || parentOverflow === 'visible'){
+                parent = parent.parentNode;
+                continue;
+            }
+            parentBounds = parent.getBoundingClientRect();
+        }
+
+        if(parentBounds.top > bounds.top){
+            bounds.height = bounds.height - (parentBounds.top - bounds.top);
+            bounds.top = parentBounds.top;
+        }
+        if(parentBounds.left > bounds.left){
+            bounds.width = bounds.width - (parentBounds.left - bounds.left);
+            bounds.left = parentBounds.left;
+        }
+        if(parentBounds.right < bounds.right){
+            bounds.width = bounds.width - (bounds.right - parentBounds.right);
+            bounds.right = parentBounds.right;
+        }
+        if(parentBounds.bottom < bounds.bottom){
+            bounds.height = bounds.height - (bounds.bottom - parentBounds.bottom);
+            bounds.bottom = parentBounds.bottom;
+        }
+
+        if(bounds.width <= 0 || bounds.height <= 0){
+            bounds.hidden = true;
+            bounds.width = Math.max(bounds.width, 0);
+            bounds.height = Math.max(bounds.height, 0);
+            return bounds;
+        }
+
+        parent = parent.parentNode;
+    }
+
+    return bounds;
+}
+
+module.exports = findChildsExposedBox;
+},{}]},{},[66]);

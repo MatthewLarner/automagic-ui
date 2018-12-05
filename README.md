@@ -12,11 +12,14 @@ var driver = require('automagic-ui');
 
 driver.init({
     // Scope to a different document or window such as inside an iframe
-    documentScope: //defaults to document
-    windowScope: //defaults to window
+    documentScope: // defaults to document
+    windowScope: // defaults to window
 
     // Set a delay before executing commands, also sets a default for driver.wait
-    runDelay: //defaults to 0
+    runDelay: // defaults to 0
+
+    // Set a delay between key-presses
+    keyPressDelay: // defaults to 50
 });
 ```
 

@@ -1,16 +1,16 @@
 var predator = require('predator');
 var scrollIntoView = require('scroll-into-view');
 
-// List of tagNames ordered by their likeliness to be the target of a click event
-var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button'];
-var clickWeighting = ['button', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
+// List of selectors ordered by their likeliness to be the target of text/click/value selection
+var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button', '[role=button]'];
+var clickWeighting = ['button', '[role=button]', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
 var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
-        'button': ['button', 'a', 'input[type=button]'],
-        'label': ['label', 'span', 'div'],
-        'heading': ['h1', 'h2', 'h3', 'h4'],
-        'image': ['img', 'svg'],
+        'button': ['button', 'a', 'input[type=button]', '[role=button]'],
+        'label': ['label', 'span', ':not([role=button])'],
+        'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
+        'image': ['img', 'svg', '[role=img]'],
         'field': ['input', 'textarea', 'select', 'label'],
         'all': ['*'],
         'text': ['*']
@@ -19,6 +19,7 @@ var types = {
     documentScope,
     windowScope,
     runDelay,
+    keyPressDelay,
     initialised;
 
 function _pressKey(key, done) {
@@ -54,13 +55,14 @@ function _pressKeys(keys, done) {
     _pressKey.call(state, nextKey, function() {
         setTimeout(function(){
             _pressKeys.call(state, String(keys).slice(1), done);
-        }, 50);
+        }, state.keyPressDelay);
     });
 }
 
 function findUi(currentContex, selectors) {
-    return Array.prototype.slice.call(currentContex.querySelectorAll(selectors))
-        .sort(function(a, b){
+    var candidates = Array.prototype.slice.call(currentContex.querySelectorAll(selectors));
+
+    return candidates.sort(function(a, b){
             return !a.contains(b) ? -1 : 0;
         }); // deeper elements take precedence.
 }
@@ -100,6 +102,7 @@ function matchElementValue(element, value) {
         checkMatchValue(element.textContent, value) ||
         checkMatchValue(element.title, value) ||
         checkMatchValue(element.placeholder, value) ||
+        checkMatchValue(element.getAttribute('aria-label'), value) ||
         checkMatchValue(element.value, value)
     );
 }
@@ -112,17 +115,17 @@ function findMatchingElements(value, type, elementsList) {
 }
 
 function getElementTextWeight(element) {
-    var index = textWeighting.indexOf(element.tagName.toLowerCase());
+    var index = textWeighting.findIndex(selector => element.matches(selector));
     return textWeighting.length - (index < 0 ? Infinity : index);
 }
 
 function getElementClickWeight(element) {
-    var index = clickWeighting.indexOf(element.tagName.toLowerCase());
+    var index = clickWeighting.findIndex(selector => element.matches(selector));
     return clickWeighting.length - (index < 0 ? Infinity : index);
 }
 
 function getElementValueWeight(element) {
-    var index = valueWeighting.indexOf(element.tagName.toLowerCase());
+    var index = valueWeighting.findIndex(selector => element.matches(selector));
     return valueWeighting.length - (index < 0 ? Infinity : index);
 }
 
@@ -146,7 +149,7 @@ function _findAllUi(value, type, done){
 
     var results = findMatchingElements(value, type, elements)
         .sort(function(a, b) {
-            return getElementTextWeight(a) < getElementTextWeight(b);
+            return getElementTextWeight(b) - getElementTextWeight(a);
         });
 
     done(null, results);
@@ -219,7 +222,7 @@ function executeClick(value, type, done) {
 
         var clickableElements = elements
             .sort(function(a, b) {
-                return getElementClickWeight(a) < getElementClickWeight(b);
+                return getElementClickWeight(b) - getElementClickWeight(a);
             });
 
         var element = findClickable(state.currentContext, elements);
@@ -250,7 +253,7 @@ function _focus(value, type, done) {
 
         var result = elements
             .sort(function(a, b) {
-                return getElementValueWeight(a) < getElementValueWeight(b);
+                return getElementValueWeight(b) - getElementValueWeight(a);
             })
             .shift();
 
@@ -448,6 +451,7 @@ driveUi.init = function(settings) {
     windowScope = settings.window || window;
     runDelay = settings.runDelay || 0;
     clickDelay = settings.clickDelay || 100;
+    keyPressDelay = settings.keyPressDelay || 50;
 
     initialised = true;
 };

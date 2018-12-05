@@ -3,7 +3,8 @@ var test = require('tape'),
 
 window.onload = function(){
     driver.init({
-        runDelay: 750
+        runDelay: 10,
+        keyPressDelay: 1
     });
 
     test('do stuff', function(t) {
@@ -49,6 +50,54 @@ window.onload = function(){
 
                 t.notOk(error, 'should not error');
                 t.ok(result, 'got a result');
+            });
+    });
+
+    test('test button value', function(t) {
+        driver()
+            .click('i need a click')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a button');
+                t.equal(result.value, 'i need a click', 'got correct button');
+            });
+    });
+
+    test('test aria-label', function(t) {
+        driver()
+            .click('click me')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a button');
+                t.equal(result.getAttribute('aria-label'), 'click me', 'got correct button');
+            });
+    });
+
+    test('test aria role button', function(t) {
+        driver()
+            .click('I\'m like a button')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'LABEL', 'got a "button"');
+                t.equal(result.getAttribute('role'), 'button', 'got correct "button"');
+            });
+    });
+
+    test('test aria role non-button text', function(t) {
+        driver()
+            .findUi('I\'m like a button', 'label')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'LABEL', 'got a "button"');
+                t.notEqual(result.getAttribute('role'), 'button', 'got correct "button"');
             });
     });
 };

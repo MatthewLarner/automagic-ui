@@ -100,8 +100,8 @@ function checkMatchValue(targetValue, value){
 function matchElementValue(element, value) {
     return (
         checkMatchValue(element.textContent, value) ||
-        checkMatchValue(element.title, value) ||
-        checkMatchValue(element.placeholder, value) ||
+        checkMatchValue(element.getAttribute('title'), value) ||
+        checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
         checkMatchValue(element.value, value)
     );

@@ -97,11 +97,11 @@ Set's window.url to location.
 Find and return some UI that semantically matches `semanticLabel` where `semanticLabel` can be the elements `text`, `title`, `placeholder`, `aria-label`, or `value`.
 
 Elements will then be ordered by `type` where `type` is one of:
- - button: <button>, <a>, ...
- - label: <label>, <span>, ...
- - heading: [role=heading], <h1>, <h2>, ...
- - image: <img>, <svg>, [role=img] ...
- - field: <input>, <textarea>, <select>, <label>
+ - button: `<button>, <a>, ...`
+ - label: `<label>, <span>, ...`
+ - heading: `[role=heading], <h1>, <h2>, ...`
+ - image: `<img>, <svg>, [role=img] ...`
+ - field: `<input>, <textarea>, <select>, <label>`
  - text: Anything.
  - all: Anything.
 

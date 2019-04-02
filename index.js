@@ -8,6 +8,7 @@ var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
         'button': ['button', 'a', 'input[type=button]', '[role=button]'],
+        'link': ['a', 'button', 'input[type=button]', '[role=button]'],
         'label': ['label', 'span', ':not([role=button])'],
         'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg', '[role=img]'],
@@ -103,7 +104,22 @@ function matchElementValue(element, value) {
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
-        checkMatchValue(element.value, value)
+        checkMatchValue(element.value, value) ||
+
+        // Elements beside labels
+        (
+            element.previousElementSibling &&
+            checkMatchValue(element.previousElementSibling.textContent, value)
+        ) ||
+
+        // Direct-child text nodes
+        checkMatchValue(
+            Array.from(element.childNodes)
+                .filter(node => node.nodeType === 3)
+                .map(textNode => textNode.textContent)
+                .join(''),
+            value
+        )
     );
 }
 
@@ -215,7 +231,7 @@ function findClickable(currentContext, elements){
 
 function executeClick(value, type, done) {
     var state = this;
-    _findUi.call(state, value, 'all', true, function(error, elements) {
+    _findUi.call(state, value, type, true, function(error, elements) {
         if(error) {
             return done(error);
         }
@@ -288,6 +304,15 @@ function _changeValue(value, type, text, done) {
     });
 }
 
+function _clear(value, type, done){
+    var context = this;
+    _focus.call(context, value, type, function(error, element) {
+        var element = context.currentContext.activeElement;
+        element.value = null;
+        done(null, element);
+    });
+}
+
 function _getValue(value, type, done) {
     _focus.call(this, value, type, function(error, element) {
         if(error){
@@ -296,11 +321,6 @@ function _getValue(value, type, done) {
 
         done(null, 'value' in element ? element.value : element.textContent);
     });
-}
-
-function _then(task, done) {
-    var state = this;
-    task(state.lastResult, done);
 }
 
 function _blur(done) {
@@ -326,6 +346,32 @@ function _scrollTo(value, type, done){
             done(null, targetElement);
         });
     });
+}
+
+function _waitFor(value, type, timeout, done){
+    var context = this;
+    var startTime = Date.now();
+
+    if(!timeout){
+        timeout = 3000;
+    }
+
+    function retry(){
+        if(Date.now() - startTime > timeout){
+            return done(new Error('Timeout finding ' + value));
+        }
+
+        _findUi.call(context, value, type, true, function(error, elements){
+            if(error){
+                window.requestAnimationFrame(() => retry(), 10);
+                return;
+            }
+
+            done(null, elements[0]);
+        });
+    }
+
+    retry();
 }
 
 function runTasks(state, tasks, callback) {
@@ -384,10 +430,23 @@ function driveUi(currentContext){
         pressKeys: function(value) {
             return addTask(_pressKeys.bind(state, value));
         },
+        clear: function(value, type) {
+            return addTask(_clear.bind(state, value, type));
+        },
         changeValue: function(value, type, text) {
+            if(arguments.length < 3){
+                done = text;
+                text = type;
+                type = null;
+            }
             return addTask(_changeValue.bind(state, value, type, text));
         },
         setValue: function(value, type, text) {
+            if(arguments.length < 3){
+                done = text;
+                text = type;
+                type = null;
+            }
             return addTask(_setValue.bind(state, value, type, text));
         },
         getValue: function(value, type) {
@@ -402,9 +461,6 @@ function driveUi(currentContext){
         },
         do: function(driver){
             return addTask(driver.go);
-        },
-        then: function(task){
-            return addTask(_then.bind(state, task));
         },
         in: function(value, type, addSubTasks){
             return addTask(function(done){
@@ -428,6 +484,13 @@ function driveUi(currentContext){
         },
         scrollTo: function(value, type){
             return addTask(_scrollTo.bind(state, value, type));
+        },
+        waitFor: function(value, type, timeout){
+            if(arguments.length < 3){
+                timeout = type;
+                type = null;
+            }
+            return addTask(_waitFor.bind(state, value, type, timeout));
         },
         go: function(callback) {
             if(!initialised) {

@@ -16,7 +16,7 @@ window.onload = function(){
             .pressKey('1')
             .wait(200)
             .pressKey('a')
-            .then(function(result, callback){
+            .check(function(result, callback){
                 t.equal(result.tagName, 'INPUT', 'Result is focused input');
                 callback(null, result);
             })
@@ -98,6 +98,55 @@ window.onload = function(){
                 t.notOk(error, 'should not error');
                 t.equal(result.tagName, 'LABEL', 'got a "button"');
                 t.notEqual(result.getAttribute('role'), 'button', 'got correct "button"');
+            });
+    });
+
+    test('test direct child textContent', function(t) {
+        driver()
+            .findUi('Direct Text')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'H1', 'got a "H1"');
+                t.equal(result.textContent, 'Decendent Text Direct Text', 'got correct "H1"');
+            });
+    });
+
+    test('test clear', function(t) {
+        driver()
+            .clear('test input')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, '', 'value was correctly cleared');
+            });
+    });
+
+    test('test changeValue without type', function(t) {
+        driver()
+            .clear('test input')
+            .blur()
+            .changeValue('test input', 'new value')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, 'new value', 'value was correctly changed');
+            });
+    });
+
+    test('wait for', function(t) {
+        driver()
+            .click('I make UI eventually')
+            .waitFor('New UI')
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'H1', 'got a "H1"');
+                t.equal(result.textContent, 'New UI');
             });
     });
 };

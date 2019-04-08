@@ -104,6 +104,7 @@ function matchElementValue(element, value) {
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
+        element.tagName === 'IMG' && checkMatchValue(element.getAttribute('alt'), value) ||
         checkMatchValue(element.value, value) ||
 
         // Elements beside labels

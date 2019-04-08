@@ -41,6 +41,17 @@ window.onload = function(){
             });
     });
 
+    test('alt-text', function(t) {
+        driver()
+            .findUi('cool image')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'IMG', 'got correct result');
+            });
+    });
+
     test('test regex', function(t) {
         driver()
             .focus(/.*test.*/i)

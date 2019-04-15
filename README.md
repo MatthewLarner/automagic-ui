@@ -169,6 +169,16 @@ Do some custom action.
 
 `action` will be called with `action(lastResult, callback)`
 
+### if(semanticLabel[, type], addSubTasks)
+
+Caution! This function is not inteded to be used for any case other than UI's that are specifically built with random interface elements, such as those used in security flows. It is not recommended that you use it to predict state based on the presence of UI.
+
+ - Do `findUi(semanticLabel[, type])`
+ - Ff the UI could not be found, skip the rest
+ - Create a new driver
+ - Then call `addSubTasks(newDriver)`
+ - Then execute that driver.
+
 ### in(semanticLabel[, type], addSubTasks)
 
  - Do `findUi(semanticLabel[, type])`

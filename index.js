@@ -9,7 +9,7 @@ var valueWeighting = ['input', 'textarea', 'select', 'label'];
 var types = {
         'button': ['button', 'a', 'input[type=button]', '[role=button]'],
         'link': ['a', 'button', 'input[type=button]', '[role=button]'],
-        'label': ['label', 'span', ':not([role=button])'],
+        'label': ['label', 'span', ':not(a):not(button):not([type=button]):not([role=button])'],
         'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg', '[role=img]'],
         'field': ['input', 'textarea', 'select', 'label'],
@@ -110,6 +110,7 @@ function matchElementValue(element, value) {
         // Elements beside labels
         (
             element.previousElementSibling &&
+            element.previousElementSibling.matches(types.label.join()) &&
             checkMatchValue(element.previousElementSibling.textContent, value)
         ) ||
 
@@ -462,6 +463,26 @@ function driveUi(currentContext){
         },
         do: function(driver){
             return addTask(driver.go);
+        },
+        if: function(value, type, addSubTasks){
+            if(arguments.length < 3) {
+                addSubTasks = type;
+                type = null;
+            }
+
+            return addTask(function(done){
+                _findUi.call(state, value, type, function(error, element){
+                    if(error){
+                        return done();
+                    }
+
+                    var newDriver = driveUi();
+
+                    addSubTasks(newDriver);
+
+                    newDriver.go(done);
+                });
+            });
         },
         in: function(value, type, addSubTasks){
             return addTask(function(done){

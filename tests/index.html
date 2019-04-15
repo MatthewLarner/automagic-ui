@@ -7,14 +7,28 @@
             console.log('button clicked');
         }
 
-        function makeUi(){
-            setTimeout(function(){
-                var newUi = document.createElement('h1');
-                newUi.textContent = 'New UI';
-                document.body.appendChild(newUi);
-            }, 100);
+        function makeUi(text){
+            var newUi = document.createElement('h1');
+            newUi.textContent = text || 'New UI';
+            document.body.appendChild(newUi);
+        }
+
+        function makeUiAsync(){
+            setTimeout(() => makeUi('New Async UI'), 100);
         }
     </script>
+    <style type="text/css">
+        .output{
+            position: absolute;
+            background: white;
+            height: 300px;
+            left:0;
+            right:0;
+            bottom:0;
+            overflow-y: scroll;
+            border: solid 1px black;
+        }
+    </style>
     <title></title>
 </head>
 <body>
@@ -29,7 +43,8 @@
     <form>
         <input type="text" name="title" placeholder="My [name] is 'title'">
     </form>
-    <button onclick=makeUi()>I make UI eventually</button>,
+    <button onclick=makeUi()>I make UI</button>,
+    <button onclick=makeUiAsync()>I make UI eventually</button>,
     <h1><span>Decendent Text</span> Direct Text</h1>
     <div alt="cool image">
     <img alt="cool image">

@@ -2,6 +2,17 @@ var test = require('tape'),
     driver = require('../');
 
 window.onload = function(){
+
+    var output = document.createElement('pre');
+    output.classList.add('output');
+    document.body.appendChild(output);
+    originalLog = console.log;
+    console.log = function(){
+        originalLog.apply(this, arguments);
+        output.textContent += Array.from(arguments).join() + '\n';
+        output.scrollTop = output.scrollHeight;
+    };
+
     driver.init({
         runDelay: 10,
         keyPressDelay: 1
@@ -151,13 +162,40 @@ window.onload = function(){
     test('wait for', function(t) {
         driver()
             .click('I make UI eventually')
-            .waitFor('New UI')
+            .waitFor('New Async UI')
             .go(function(error, result) {
                 t.plan(3);
 
                 t.notOk(error, 'should not error');
                 t.equal(result.tagName, 'H1', 'got a "H1"');
-                t.equal(result.textContent, 'New UI');
+                t.equal(result.textContent, 'New Async UI');
+            });
+    });
+
+    test('if - exists', function(t) {
+        driver()
+            .if('I make UI', subDriver =>
+                subDriver.click('I Make UI')
+            )
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a "H1"');
+                t.equal(result.textContent, 'I make UI');
+            });
+    });
+
+    test('if - doesnt exist', function(t) {
+        driver()
+            .if('Not a thing', subDriver =>
+                subDriver.click('Not a thing')
+            )
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.notOk(result, 'Element did not exist');
             });
     });
 };

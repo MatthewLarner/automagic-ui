@@ -255,6 +255,7 @@ function executeClick(value, type, done) {
         }
 
         element.click();
+        element.focus();
 
         setTimeout(function(){
             done(null, element);

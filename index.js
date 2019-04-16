@@ -7,7 +7,7 @@ var clickWeighting = ['button', '[role=button]', 'input', 'a', 'h1', 'h2', 'h3',
 var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
 var types = {
-        'button': ['button', 'a', 'input[type=button]', '[role=button]'],
+        'button': ['button', 'a', 'input[type=button]', '[role=button]', '[tabindex]'],
         'link': ['a', 'button', 'input[type=button]', '[role=button]'],
         'label': ['label', 'span', ':not(a):not(button):not([type=button]):not([role=button])'],
         'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
@@ -255,6 +255,15 @@ function executeClick(value, type, done) {
         }
 
         element.click();
+
+        // Find closest button-like decendant
+        while(element && !element.matches || !element.matches(types.button.join())){
+            element = element.parentNode;
+        }
+
+        if(element){
+            element.focus();
+        }
 
         setTimeout(function(){
             done(null, element);

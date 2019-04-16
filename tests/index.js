@@ -40,6 +40,17 @@ window.onload = function(){
             });
     });
 
+    test('click and focus', function(t) {
+        t.plan(2);
+
+        driver()
+            .click('Icon button')
+            .go(function(error, result) {
+                t.notOk(error, 'should not error');
+                t.equal(document.activeElement.tagName, 'BUTTON');
+            });
+    });
+
     test('test placeholder', function(t) {
         driver()
             .focus('input with placeholder')

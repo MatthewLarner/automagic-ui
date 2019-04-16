@@ -1,6 +1,6 @@
 {
   "name": "automagic-ui",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Automagic ui driver for web interfaces",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/MatthewLarner/automagic-ui#readme",
   "dependencies": {
-    "predator": "^1.0.2",
+    "predator": "^1.0.5",
     "scroll-into-view": "^1.9.1",
     "shuv": "^1.0.0"
   },

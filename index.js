@@ -23,10 +23,15 @@ var types = {
     keyPressDelay,
     initialised;
 
-function _pressKey(key, done) {
+function _pressKey(key, fullValue, done) {
     var element = this.currentContext.activeElement;
 
-    element.value += key;
+    if(arguments.length < 3){
+        done = fullValue;
+        fullValue = element.value + key;
+    }
+
+    element.value = fullValue;
 
     var keydownEvent = new windowScope.KeyboardEvent('keydown'),
         keyupEvent = new windowScope.KeyboardEvent('keyup'),
@@ -46,18 +51,23 @@ function _pressKey(key, done) {
 }
 
 function _pressKeys(keys, done) {
-    var state = this,
-        nextKey = String(keys).charAt(0);
+    var state = this;
 
-    if(nextKey === ''){
-        return done(null, this.currentContext.activeElement);
+    function pressNextKey(keyIndex, callback){
+        var nextKey = String(keys).charAt(keyIndex);
+
+        if(nextKey === ''){
+            return callback(null, state.currentContext.activeElement);
+        }
+
+        _pressKey.call(state, nextKey, keys.slice(0, keyIndex + 1), function() {
+            setTimeout(function(){
+                pressNextKey(keyIndex + 1, callback);
+            }, state.keyPressDelay);
+        });
     }
 
-    _pressKey.call(state, nextKey, function() {
-        setTimeout(function(){
-            _pressKeys.call(state, String(keys).slice(1), done);
-        }, state.keyPressDelay);
-    });
+    pressNextKey(0, done)
 }
 
 function findUi(currentContex, selectors) {

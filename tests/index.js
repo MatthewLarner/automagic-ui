@@ -209,4 +209,15 @@ window.onload = function(){
                 t.notOk(result, 'Element did not exist');
             });
     });
+
+    test('changeValue, decimals', function(t) {
+        driver()
+            .changeValue('number field', '1.23')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, '1.23');
+            });
+    });
 };

@@ -23,6 +23,8 @@ var types = {
     keyPressDelay,
     initialised;
 
+var nonTextInputs = ['date', 'range', 'select'];
+
 function _pressKey(key, fullValue, done) {
     var element = this.currentContext.activeElement;
 
@@ -31,21 +33,24 @@ function _pressKey(key, fullValue, done) {
         fullValue = element.value + key;
     }
 
-    element.value = fullValue;
 
     var keydownEvent = new windowScope.KeyboardEvent('keydown'),
         keyupEvent = new windowScope.KeyboardEvent('keyup'),
-        pressKeyEvent = new windowScope.KeyboardEvent('pressKey');
+        keypressEvent = new windowScope.KeyboardEvent('keypress');
+        inputEvent = new windowScope.KeyboardEvent('input');
 
     var method = 'initKeyboardEvent' in keydownEvent ? 'initKeyboardEvent' : 'initKeyEvent';
 
     keydownEvent[method]('keydown', true, true, windowScope, key, 3, true, false, true, false, false);
+    keypressEvent[method]('keypress', true, true, windowScope, key, 3, true, false, true, false, false);
+    inputEvent[method]('input', true, true, windowScope, key, 3, true, false, true, false, false);
     keyupEvent[method]('keyup', true, true, windowScope, key, 3, true, false, true, false, false);
-    pressKeyEvent[method]('pressKey', true, true, windowScope, key, 3, true, false, true, false, false);
 
     element.dispatchEvent(keydownEvent);
+    element.value = fullValue;
+    element.dispatchEvent(keypressEvent);
+    element.dispatchEvent(inputEvent);
     element.dispatchEvent(keyupEvent);
-    element.dispatchEvent(pressKeyEvent);
 
     done(null, element);
 }
@@ -267,7 +272,10 @@ function executeClick(value, type, done) {
         element.click();
 
         // Find closest button-like decendant
-        while(element && !element.matches || !element.matches(types.button.join())){
+        while(
+            element &&
+            (!element.matches || !element.matches(types.button.concat('input').join()))
+        ){
             element = element.parentNode;
         }
 
@@ -300,12 +308,62 @@ function _focus(value, type, done) {
    });
 }
 
+function _changeInputValue(element, value, done){
+    var inputEvent = new windowScope.KeyboardEvent('input');
+    var method = 'initKeyboardEvent' in inputEvent ? 'initKeyboardEvent' : 'initKeyEvent';
+
+    inputEvent[method]('input', true, true, windowScope, null, 3, true, false, true, false, false);
+    element.value = value;
+
+    element.dispatchEvent(inputEvent);
+    element.blur();
+
+    var changeEvent = document.createEvent('HTMLEvents');
+    changeEvent.initEvent('change', false, true);
+    element.dispatchEvent(changeEvent);
+
+    done(null, element);
+}
+
+function encodeDateValue(date){
+    date = new Date(date);
+    var value = null;
+
+    if(date && !isNaN(date)){
+        value = [
+            date.getFullYear(),
+            ('0' + (date.getMonth() + 1)).slice(-2),
+            ('0' + date.getDate()).slice(-2)
+        ].join('-');
+    }
+
+    return value;
+}
+
+var typeEncoders = {
+    date: encodeDateValue
+};
+
+function changeNonTextInput(element, text, done){
+    var value = null;
+    if(element.type in typeEncoders){
+        value = typeEncoders[element.type](text);
+    } else {
+        value = text;
+    }
+    return _changeInputValue(element, value, done);
+}
+
 function _changeValue(value, type, text, done) {
     var state = this;
 
     _focus.call(state, value, type, function(error, element) {
         if(error){
             return done(error);
+        }
+
+        if(element.nodeName === 'INPUT' && ~nonTextInputs.indexOf(element.type)){
+            return changeNonTextInput(element, text, done);
         }
 
         _pressKeys.call(state, text, function(error){
@@ -315,10 +373,9 @@ function _changeValue(value, type, text, done) {
 
             element.blur();
 
-            var event = document.createEvent('HTMLEvents');
-
-            event.initEvent('change', false, true);
-            element.dispatchEvent(event);
+            var changeEvent = document.createEvent('HTMLEvents');
+            changeEvent.initEvent('change', false, true);
+            element.dispatchEvent(changeEvent);
 
             done(null, element);
         });

@@ -14,7 +14,7 @@ window.onload = function(){
     };
 
     driver.init({
-        runDelay: 10,
+        runDelay: 1,
         keyPressDelay: 1
     });
 
@@ -218,6 +218,101 @@ window.onload = function(){
 
                 t.notOk(error, 'should not error');
                 t.equal(result.value, '1.23');
+            });
+    });
+
+    test('changeValue, date field', function(t) {
+        var today = new Date();
+        today.setMilliseconds(0);
+        today.setSeconds(0);
+        today.setMinutes(0);
+        today.setUTCHours(0);
+
+        driver()
+            .changeValue('date field', today)
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(new Date(result.value).getTime(), today.getTime());
+            });
+    });
+
+    test('changeValue, date field, string date', function(t) {
+        var today = '2020-04-06'
+
+        driver()
+            .changeValue('date field', today)
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(new Date(result.value).getTime(), new Date(today).getTime());
+            });
+    });
+
+    test('changeValue, range field', function(t) {
+        driver()
+            .changeValue('range field', 30)
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, '30');
+            });
+    });
+
+    test('changeValue, select field', function(t) {
+        driver()
+            .changeValue('select field', 'bar')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, 'bar');
+            });
+    });
+
+    test('click checkbox', function(t) {
+        driver()
+            .click('checkbox')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, 'on');
+            });
+    });
+
+    test('changeValue, correct events', function(t) {
+        var firstInput = document.querySelector('.firstInput');
+        var eventsFired = [];
+
+        firstInput.addEventListener('keypress', function() {
+            eventsFired.push('keypress');
+        });
+        firstInput.addEventListener('input', function() {
+            eventsFired.push('input');
+        });
+        firstInput.addEventListener('keyup', function() {
+            eventsFired.push('keyup');
+        });
+        firstInput.addEventListener('keydown', function() {
+            eventsFired.push('keydown');
+        });
+
+        driver()
+            .changeValue('test input', 'a')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.deepEqual(eventsFired, [
+                    'keydown',
+                    'keypress',
+                    'input',
+                    'keyup'
+                ]);
             });
     });
 };

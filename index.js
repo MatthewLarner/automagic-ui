@@ -13,6 +13,7 @@ var types = {
         'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
         'image': ['img', 'svg', '[role=img]'],
         'field': ['input', 'textarea', 'select', 'label'],
+        'row': ['tr', '[role=row]'],
         'all': ['*'],
         'text': ['*']
     },
@@ -136,7 +137,12 @@ function matchElementValue(element, value) {
                 .map(textNode => textNode.textContent)
                 .join(''),
             value
-        )
+        ) ||
+
+        // Direct-child label-like nodes
+        Array.from(element.children)
+            .filter(child => child.matches(types.label.join()))
+            .some(childElement => checkMatchValue(childElement.textContent, value))
     );
 }
 
@@ -236,7 +242,11 @@ function findClickable(currentContext, elements){
     for(var i = 0; i < elements.length; i++){
         var element = elements[i];
             rect = element.getBoundingClientRect(),
-            clickElement = currentContext.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
+            clickElement = (
+                    currentContext.ownerDocument || // If context is a Node
+                    currentContext // If context is a Document
+                )
+                .elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2),
             clickElementInElement = element.contains(clickElement),
             elementInClickElement = clickElement.contains(element);
 

@@ -183,6 +183,20 @@ window.onload = function(){
             });
     });
 
+    test('in - row', function(t) {
+        driver()
+            .in('bar', 'row', subDriver =>
+                subDriver.findUi('action')
+            )
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a "button"');
+                t.equal(result.getAttribute('class'), 'action2');
+            });
+    });
+
     test('if - exists', function(t) {
         driver()
             .if('I make UI', subDriver =>
@@ -192,7 +206,7 @@ window.onload = function(){
                 t.plan(3);
 
                 t.notOk(error, 'should not error');
-                t.equal(result.tagName, 'BUTTON', 'got a "H1"');
+                t.equal(result.tagName, 'BUTTON', 'got a "button"');
                 t.equal(result.textContent, 'I make UI');
             });
     });

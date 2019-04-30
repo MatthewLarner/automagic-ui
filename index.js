@@ -114,9 +114,29 @@ function checkMatchValue(targetValue, value){
     return targetValue && targetValue.toLowerCase().trim() === value.toLowerCase();
 }
 
+function getElementVisibleText(element){
+    var visibleText = Array.from(element.querySelectorAll('*'))
+        .concat(element)
+        .filter(element => {
+            if(!element.textContent || predator(element).hidden){
+                return;
+            }
+
+            var style = window.getComputedStyle(element);
+            return style.visibility !== 'hidden' && style.display !== 'none';
+        })
+        .map(element => Array.from(element.childNodes).filter(node => node.nodeType === 3))
+        .flat()
+        .map(node => node.textContent)
+        .join('');
+
+    return visibleText;
+}
+
 function matchElementValue(element, value) {
+    var elementText = getElementVisibleText(element);
     return (
-        checkMatchValue(element.textContent, value) ||
+        checkMatchValue(elementText, value) ||
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
@@ -127,7 +147,7 @@ function matchElementValue(element, value) {
         (
             element.previousElementSibling &&
             element.previousElementSibling.matches(types.label.join()) &&
-            checkMatchValue(element.previousElementSibling.textContent, value)
+            checkMatchValue(getElementVisibleText(element.previousElementSibling), value)
         ) ||
 
         // Direct-child text nodes
@@ -142,7 +162,7 @@ function matchElementValue(element, value) {
         // Direct-child label-like nodes
         Array.from(element.children)
             .filter(child => child.matches(types.label.join()))
-            .some(childElement => checkMatchValue(childElement.textContent, value))
+            .some(childElement => checkMatchValue(getElementVisibleText(childElement), value))
     );
 }
 
@@ -211,7 +231,12 @@ function _findUi(value, type, returnArray, done) {
 
         var results = Array.prototype.slice.call(elements)
             .filter(function(element){
-                return !predator(element).hidden;
+                var style = window.getComputedStyle(element);
+                return (
+                    style.visibility !== 'hidden' &&
+                    style.display !== 'none' &&
+                    !predator(element).hidden
+                );
             });
 
         if(!results.length){

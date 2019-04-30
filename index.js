@@ -114,17 +114,23 @@ function checkMatchValue(targetValue, value){
     return targetValue && targetValue.toLowerCase().trim() === value.toLowerCase();
 }
 
+function isVisible(element){
+    if(element.getAttribute('aria-hidden') === 'true') {
+        return false;
+    }
+
+    var style = window.getComputedStyle(element);
+    return style.visibility !== 'hidden' && style.display !== 'none';
+}
+
 function getElementVisibleText(element){
     var visibleText = Array.from(element.querySelectorAll('*'))
         .concat(element)
-        .filter(element => {
-            if(!element.textContent || predator(element).hidden){
-                return;
-            }
-
-            var style = window.getComputedStyle(element);
-            return style.visibility !== 'hidden' && style.display !== 'none';
-        })
+        .filter(element =>
+            element.textContent &&
+            isVisible(element) &&
+            !predator(element).hidden
+        )
         .map(element => Array.from(element.childNodes).filter(node => node.nodeType === 3))
         .flat()
         .map(node => node.textContent)
@@ -134,35 +140,35 @@ function getElementVisibleText(element){
 }
 
 function matchElementValue(element, value) {
-    var elementText = getElementVisibleText(element);
     return (
-        checkMatchValue(elementText, value) ||
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
         element.tagName === 'IMG' && checkMatchValue(element.getAttribute('alt'), value) ||
         checkMatchValue(element.value, value) ||
+        isVisible(element) && (
+            checkMatchValue(getElementVisibleText(element), value) ||
+            // Elements beside labels
+            (
+                element.previousElementSibling &&
+                element.previousElementSibling.matches(types.label.join()) &&
+                checkMatchValue(getElementVisibleText(element.previousElementSibling), value)
+            ) ||
 
-        // Elements beside labels
-        (
-            element.previousElementSibling &&
-            element.previousElementSibling.matches(types.label.join()) &&
-            checkMatchValue(getElementVisibleText(element.previousElementSibling), value)
-        ) ||
+            // Direct-child text nodes
+            checkMatchValue(
+                Array.from(element.childNodes)
+                    .filter(node => node.nodeType === 3)
+                    .map(textNode => textNode.textContent)
+                    .join(''),
+                value
+            ) ||
 
-        // Direct-child text nodes
-        checkMatchValue(
-            Array.from(element.childNodes)
-                .filter(node => node.nodeType === 3)
-                .map(textNode => textNode.textContent)
-                .join(''),
-            value
-        ) ||
-
-        // Direct-child label-like nodes
-        Array.from(element.children)
-            .filter(child => child.matches(types.label.join()))
-            .some(childElement => checkMatchValue(getElementVisibleText(childElement), value))
+            // Direct-child label-like nodes
+            Array.from(element.children)
+                .filter(child => child.matches(types.label.join()))
+                .some(childElement => checkMatchValue(getElementVisibleText(childElement), value))
+        )
     );
 }
 
@@ -231,12 +237,7 @@ function _findUi(value, type, returnArray, done) {
 
         var results = Array.prototype.slice.call(elements)
             .filter(function(element){
-                var style = window.getComputedStyle(element);
-                return (
-                    style.visibility !== 'hidden' &&
-                    style.display !== 'none' &&
-                    !predator(element).hidden
-                );
+                return !predator(element).hidden;
             });
 
         if(!results.length){

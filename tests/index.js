@@ -40,6 +40,17 @@ window.onload = function(){
             });
     });
 
+    test('can find elements with text in sub-elements', function(t) {
+        t.plan(2);
+
+        driver()
+            .findUi('My test page')
+            .go(function(error, result) {
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'DIV', 'got correct result');
+            });
+    });
+
     test('cant find hidden elements', function(t) {
         t.plan(5);
 

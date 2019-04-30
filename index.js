@@ -124,19 +124,20 @@ function isVisible(element){
 }
 
 function getElementVisibleText(element, ignoreViewport){
-    var visibleText = Array.from(element.querySelectorAll('*'))
-        .concat(element)
-        .filter(element =>
-            element.textContent &&
-            isVisible(element) &&
-            ignoreViewport || !predator(element).hidden
-        )
-        .map(element => Array.from(element.childNodes).filter(node => node.nodeType === 3))
-        .flat()
-        .map(node => node.textContent)
-        .join('');
+    return Array.from(element.childNodes).map(node => {
+        if(node.nodeType !== 3){
+            return getElementVisibleText(node)
+        }
 
-    return visibleText;
+        return (
+            node.textContent &&
+            isVisible(element) &&
+            (ignoreViewport || !predator(element).hidden) &&
+            node.textContent
+        )
+    })
+    .flat()
+    .join('')
 }
 
 function matchElementValue(element, value, ignoreViewport) {

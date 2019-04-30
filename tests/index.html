@@ -71,5 +71,15 @@
             <td><button class="action3">Action</button></td>
         </tr>
     </table>
+
+    <div style="height: 50px; overflow: scroll;">
+        <div style="height: 100px"></div>
+        <div>out of scroll viewport</div>
+    </div>
+    <div style="position: fixed; left: -300px; width: 200px;">out of browser viewport</div>
+    <div style="display: none">display none</div>
+    <div style="visibility: hidden">visibility hidden</div>
+    <div aria-hidden="true">aria hidden</div>
+    <div style="color: red;">^ Setting an element to [aria-hidden="true"] and not hiding it is pretty bad, don't do this, automatic-ui won't find it.</div>
 </body>
 </html>

@@ -40,6 +40,34 @@ window.onload = function(){
             });
     });
 
+    test('cant find hidden elements', function(t) {
+        t.plan(4);
+
+        driver()
+            .findUi('out of scroll viewport')
+            .go(function(error, result) {
+                t.ok(error, 'should error');
+            });
+
+        driver()
+            .findUi('out of browser viewport')
+            .go(function(error, result) {
+                t.ok(error, 'should error');
+            });
+
+        driver()
+            .findUi('display none')
+            .go(function(error, result) {
+                t.ok(error, 'should error');
+            });
+
+        driver()
+            .findUi('visibility hiden')
+            .go(function(error, result) {
+                t.ok(error, 'should error');
+            });
+    });
+
     test('click and focus', function(t) {
         t.plan(2);
 

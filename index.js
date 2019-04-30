@@ -123,13 +123,13 @@ function isVisible(element){
     return style.visibility !== 'hidden' && style.display !== 'none';
 }
 
-function getElementVisibleText(element){
+function getElementVisibleText(element, ignoreViewport){
     var visibleText = Array.from(element.querySelectorAll('*'))
         .concat(element)
         .filter(element =>
             element.textContent &&
             isVisible(element) &&
-            !predator(element).hidden
+            ignoreViewport || !predator(element).hidden
         )
         .map(element => Array.from(element.childNodes).filter(node => node.nodeType === 3))
         .flat()
@@ -139,7 +139,7 @@ function getElementVisibleText(element){
     return visibleText;
 }
 
-function matchElementValue(element, value) {
+function matchElementValue(element, value, ignoreViewport) {
     return (
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
@@ -147,12 +147,13 @@ function matchElementValue(element, value) {
         element.tagName === 'IMG' && checkMatchValue(element.getAttribute('alt'), value) ||
         checkMatchValue(element.value, value) ||
         isVisible(element) && (
-            checkMatchValue(getElementVisibleText(element), value) ||
+            checkMatchValue(getElementVisibleText(element, ignoreViewport), value) ||
             // Elements beside labels
             (
                 element.previousElementSibling &&
                 element.previousElementSibling.matches(types.label.join()) &&
-                checkMatchValue(getElementVisibleText(element.previousElementSibling), value)
+                window.getComputedStyle(element.previousElementSibling).display !== 'block' &&
+                checkMatchValue(getElementVisibleText(element.previousElementSibling, ignoreViewport), value)
             ) ||
 
             // Direct-child text nodes
@@ -167,15 +168,15 @@ function matchElementValue(element, value) {
             // Direct-child label-like nodes
             Array.from(element.children)
                 .filter(child => child.matches(types.label.join()))
-                .some(childElement => checkMatchValue(getElementVisibleText(childElement), value))
+                .some(childElement => checkMatchValue(getElementVisibleText(childElement, ignoreViewport), value))
         )
     );
 }
 
-function findMatchingElements(value, type, elementsList) {
+function findMatchingElements(value, type, elementsList, ignoreViewport) {
     return Array.prototype.slice.call(elementsList)
         .filter(function(element) {
-            return matchElementValue(element, value);
+            return matchElementValue(element, value, ignoreViewport);
         });
 }
 
@@ -194,7 +195,7 @@ function getElementValueWeight(element) {
     return valueWeighting.length - (index < 0 ? Infinity : index);
 }
 
-function _findAllUi(value, type, done){
+function _findAllUi(value, type, ignoreViewport, done){
     if(!type){
         type = 'all';
     }
@@ -212,7 +213,7 @@ function _findAllUi(value, type, done){
         return done(new Error(noElementOfType + type));
     }
 
-    var results = findMatchingElements(value, type, elements)
+    var results = findMatchingElements(value, type, elements, ignoreViewport)
         .sort(function(a, b) {
             return getElementTextWeight(b) - getElementTextWeight(a);
         });
@@ -226,7 +227,7 @@ function _findUi(value, type, returnArray, done) {
         returnArray = false;
     }
 
-    _findAllUi.call(this, value, type, function(error, elements){
+    _findAllUi.call(this, value, type, false, function(error, elements){
         if(error){
             return done(error);
         }
@@ -445,7 +446,7 @@ function _blur(done) {
 }
 
 function _scrollTo(value, type, done){
-    _findAllUi.call(this, value, type, function(error, elements) {
+    _findAllUi.call(this, value, type, true, function(error, elements) {
         if(error) {
             return done(error);
         }

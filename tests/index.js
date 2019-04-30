@@ -41,12 +41,19 @@ window.onload = function(){
     });
 
     test('cant find hidden elements', function(t) {
-        t.plan(4);
+        t.plan(5);
 
         driver()
             .findUi('out of scroll viewport')
             .go(function(error, result) {
                 t.ok(error, 'should error');
+            });
+
+        driver()
+            .scrollTo('out of scroll viewport')
+            .findUi('out of scroll viewport')
+            .go(function(error, result) {
+                t.notOk(error, 'should not error');
             });
 
         driver()

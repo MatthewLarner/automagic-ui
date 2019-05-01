@@ -94,16 +94,19 @@ Set's window.url to location.
 
 ### findUi(semanticLabel[, type, returnArray])
 
-Find and return some UI that semantically matches `semanticLabel` where `semanticLabel` can be the elements `text`, `title`, `placeholder`, `aria-label`, or `value`.
+Find and return some UI that semantically matches `semanticLabel` where `semanticLabel` can be the elements `text`, `title`, `placeholder`, `aria-label`, `value`, or `alt` if the element is an `IMG`.
 
-Elements will then be ordered by `type` where `type` is one of:
+Elements will then be filtered by `type` where `type` is one of:
  - button: `<button>, <a>, ...`
  - label: `<label>, <span>, ...`
  - heading: `[role=heading], <h1>, <h2>, ...`
  - image: `<img>, <svg>, [role=img] ...`
  - field: `<input>, <textarea>, <select>, <label>`
+ - ...
  - text: Anything.
  - all: Anything.
+
+A list of all the types can be found at [elementTypes.js](./elementTypes.js)
 
 By default, returns the best-match element, but you can get all of the ordered elements  by passing `true` for `returnArray`
 

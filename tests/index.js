@@ -243,6 +243,34 @@ window.onload = function(){
             });
     });
 
+    test('in - section', function(t) {
+        driver()
+            .in('Cool content', 'section', subDriver =>
+                subDriver.findUi('Hello', 'button')
+            )
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a "button"');
+                t.ok(result.parentElement.matches('.coolContentSection'), 'Correct section');
+            });
+    });
+
+    test('in - article', function(t) {
+        driver()
+            .in('Cool content', 'article', subDriver =>
+                subDriver.findUi('Hello', 'button')
+            )
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'BUTTON', 'got a "button"');
+                t.ok(result.parentElement.matches('.coolContentArticle'), 'Correct article');
+            });
+    });
+
     test('if - exists', function(t) {
         driver()
             .if('I make UI', subDriver =>

@@ -1,23 +1,13 @@
 var predator = require('predator');
 var scrollIntoView = require('scroll-into-view');
+var types = require('./elementTypes');
 
 // List of selectors ordered by their likeliness to be the target of text/click/value selection
 var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button', '[role=button]'];
 var clickWeighting = ['button', '[role=button]', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
 var valueWeighting = ['input', 'textarea', 'select', 'label'];
 
-var types = {
-        'button': ['button', 'a', 'input[type=button]', '[role=button]', '[tabindex]'],
-        'link': ['a', 'button', 'input[type=button]', '[role=button]'],
-        'label': ['label', 'span', ':not(a):not(button):not([type=button]):not([role=button])'],
-        'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
-        'image': ['img', 'svg', '[role=img]'],
-        'field': ['input', 'textarea', 'select', 'label'],
-        'row': ['tr', '[role=row]'],
-        'all': ['*'],
-        'text': ['*']
-    },
-    noElementOfType = 'no elements of type ',
+var noElementOfType = 'no elements of type ',
     documentScope,
     windowScope,
     runDelay,

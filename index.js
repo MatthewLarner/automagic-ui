@@ -116,18 +116,21 @@ function isVisible(element){
 function getElementVisibleText(element, ignoreViewport){
     return Array.from(element.childNodes).map(node => {
         if(node.nodeType !== 3){
-            return getElementVisibleText(node)
+            return getElementVisibleText(node);
         }
 
-        return (
+        if(
             node.textContent &&
             isVisible(element) &&
-            (ignoreViewport || !predator(element).hidden) &&
-            node.textContent
-        )
+            (ignoreViewport || !predator(element).hidden)
+        ) {
+            return node.textContent;
+        }
+
+        return '';
     })
     .flat()
-    .join('')
+    .join('');
 }
 
 function matchElementValue(element, value, ignoreViewport) {

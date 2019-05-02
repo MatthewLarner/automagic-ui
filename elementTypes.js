@@ -7,6 +7,7 @@ module.exports = {
     'field': ['input', 'textarea', 'select', 'label', '[role=textbox]', '[contenteditable]'],
     'section': ['section'],
     'row': ['tr', '[role=row]'],
+    'cell': ['td', 'th', '[role=cell]'],
     'item': ['li', '[role=listitem]'],
     'article': ['[role=article]'],
     'region': ['[role=region]'],

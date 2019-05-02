@@ -18,6 +18,13 @@
         }
     </script>
     <style type="text/css">
+        h1{
+            font-size: 1.4em;
+        }
+        .columns{
+            display: flex;
+            flex-flow: row-wrap;
+        }
         .output{
             position: absolute;
             background: white;
@@ -54,8 +61,8 @@
     <input type="date" placeholder="date field">
     <input type="range" title="range field">
     <select type="select" title="select field">
-        <option value="foo">foo</option>
-        <option value="bar">bar</option>
+        <option value="foo" aria-label="Fooble">Foo</option>
+        <option value="bar" aria-label="Barble">Bar</option>
     </select>
     <input type="checkbox" title="checkbox">
     <table>
@@ -82,25 +89,31 @@
     <div style="visibility: hidden">visibility hidden</div>
     <div aria-hidden="true">aria hidden</div>
     <div style="color: red;">^ Setting an element to [aria-hidden="true"] and not hiding it is pretty bad, don't do this, automatic-ui won't find it.</div>
-    <section class="coolContentSection">
-        <h1>Cool content</h1>
-        <button>Hello</button>
-    </section>
-    <section class="moreContentSection">
-        <h1>More content</h1>
-        <button>Hello</button>
-    </section>
-    <div class="coolContentArticle" role="article">
-        <h1>Cool content</h1>
-        <button>Hello</button>
+    <div class="columns">
+        <section class="coolContentSection">
+            <h1>Cool content</h1>
+            <button>Hello</button>
+        </section>
+        <section class="moreContentSection">
+            <h1>More content</h1>
+            <button>Hello</button>
+        </section>
+        <div class="coolContentArticle" role="article">
+            <h1>Cool content</h1>
+            <button>Hello</button>
+        </div>
+        <div class="coolContentDiv">
+            <h1>Cool content</h1>
+            <button>Hello</button>
+        </div>
+        <div class="moreContentDivArticle" role="article">
+            <h1>More content</h1>
+            <button>Hello</button>
+        </div>
     </div>
-    <div class="coolContentDiv">
-        <h1>Cool content</h1>
-        <button>Hello</button>
-    </div>
-    <div class="moreContentDivArticle" role="article">
-        <h1>More content</h1>
-        <button>Hello</button>
-    </div>
+    <fieldset>
+        <label>Rich text editor</label>
+        <div contenteditable="true"></div>
+    </fieldset>
 </body>
 </html>

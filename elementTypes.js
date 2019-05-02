@@ -4,7 +4,7 @@ module.exports = {
     'label': ['label', 'span', ':not(a):not(button):not([type=button]):not([role=button])'],
     'heading': ['[role=heading]', 'h1', 'h2', 'h3', 'h4'],
     'image': ['img', 'svg', '[role=img]'],
-    'field': ['input', 'textarea', 'select', 'label', '[role=textbox]'],
+    'field': ['input', 'textarea', 'select', 'label', '[role=textbox]', '[contenteditable]'],
     'section': ['section'],
     'row': ['tr', '[role=row]'],
     'item': ['li', '[role=listitem]'],

@@ -5,7 +5,7 @@ var types = require('./elementTypes');
 // List of selectors ordered by their likeliness to be the target of text/click/value selection
 var textWeighting = ['h1', 'h2', 'h3', 'h4', 'label', 'p', 'a', 'button', '[role=button]'];
 var clickWeighting = ['button', '[role=button]', 'input', 'a', 'h1', 'h2', 'h3', 'h4', 'i', 'label'];
-var valueWeighting = ['input', 'textarea', 'select', 'label'];
+var valueWeighting = ['input', 'textarea', 'select', '[contenteditable]', 'label'];
 
 var noElementOfType = 'no elements of type ',
     documentScope,
@@ -339,6 +339,11 @@ function _focus(value, type, done) {
    });
 }
 
+function _changeContenteditableValue(element, text, done){
+    element.innerHTML = text;
+    done(null, element);
+}
+
 function _changeInputValue(element, value, done){
     var inputEvent = new windowScope.KeyboardEvent('input');
     var method = 'initKeyboardEvent' in inputEvent ? 'initKeyboardEvent' : 'initKeyEvent';
@@ -371,14 +376,27 @@ function encodeDateValue(date){
     return value;
 }
 
+function encodeSelectValue(label, element){
+    var selectedOption = Array.from(element.querySelectorAll('option'))
+        .find(option => matchElementValue(option, label, true));
+
+    return selectedOption ? selectedOption.value : label;
+}
+
 var typeEncoders = {
-    date: encodeDateValue
+    date: encodeDateValue,
+    'select-one': encodeSelectValue
 };
 
 function changeNonTextInput(element, text, done){
+    if(element.hasAttribute('contenteditable')){
+        return _changeContenteditableValue(element, text, done)
+    }
+
     var value = null;
+
     if(element.type in typeEncoders){
-        value = typeEncoders[element.type](text);
+        value = typeEncoders[element.type](text, element);
     } else {
         value = text;
     }
@@ -393,7 +411,11 @@ function _changeValue(value, type, text, done) {
             return done(error);
         }
 
-        if(element.nodeName === 'INPUT' && ~nonTextInputs.indexOf(element.type)){
+        if(
+            element.nodeName === 'INPUT' && ~nonTextInputs.indexOf(element.type) ||
+            element.nodeName === 'SELECT' ||
+            element.hasAttribute('contenteditable')
+        ){
             return changeNonTextInput(element, text, done);
         }
 

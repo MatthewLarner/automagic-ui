@@ -352,12 +352,55 @@ window.onload = function(){
 
     test('changeValue, select field', function(t) {
         driver()
-            .changeValue('select field', 'bar')
+            .changeValue('select field', 'Bar')
             .go(function(error, result) {
                 t.plan(2);
 
                 t.notOk(error, 'should not error');
                 t.equal(result.value, 'bar');
+            });
+    });
+
+    test('changeValue, select field, aria-label', function(t) {
+        driver()
+            .changeValue('select field', 'Fooble')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.value, 'foo');
+            });
+    });
+
+    test('changeValue, contenteditable', function(t) {
+        driver()
+            .changeValue('Rich text editor', 'Some text')
+            .go(function(error, result) {
+                t.plan(2);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.textContent, 'Some text');
+            });
+    });
+
+    test('changeValue, contenteditable, rich value', function(t) {
+        driver()
+            .changeValue('Rich text editor', `
+                <h1>Some text</h1>
+                <p>
+                    <ul>
+                        <li>Item 1</li>
+                        <li>Item 2</li>
+                    </ul>
+                </p>
+            `)
+            .go(function(error, result) {
+                t.plan(4);
+
+                t.notOk(error, 'should not error');
+                t.ok(result.textContent.includes('Some text'));
+                t.ok(result.textContent.includes('Item 1'));
+                t.ok(result.textContent.includes('Item 2'));
             });
     });
 

@@ -243,6 +243,20 @@ window.onload = function(){
             });
     });
 
+    test('in - cell', function(t) {
+        driver()
+            .in('Foo 2', 'cell', subDriver =>
+                subDriver.findUi('Bar 2')
+            )
+            .go(function(error, result) {
+                t.plan(3);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'SPAN', 'got a "span"');
+                t.equal(result.textContent, 'Bar 2');
+            });
+    });
+
     test('in - section', function(t) {
         driver()
             .in('Cool content', 'section', subDriver =>

@@ -3,7 +3,7 @@ Automagic ui driver for web interfaces
 
 User interface integration tests are notoriously brittle.
 
-automagic-ui attempts to ease the pain by providing a descriptive  api for user interactions.
+automagic-ui attempts to ease the pain by providing a descriptive api for user interactions.
 
 ## Usage
 
@@ -82,7 +82,7 @@ are sight-limited.
 
 Muliple reasons:
 
- - Users cant see DOM attributes, you woudln't say "Click .foo[bar=3] > *:first-child" to a person.
+ - Users can't see DOM attributes, you woudln't say "Click .foo[bar=3] > *:first-child" to a person.
  - The DOM structure of your application is not coupled to it's usability. When tests use dom-selectors to assert things, they break when the implementation changes, and they often continue to pass even when the UI is broken. If you set a button to `display: none`, a person cannot click it, but your tests will still pass.
  - If you can't target an element by semantic labels, you need to improve your application.
 
@@ -94,9 +94,7 @@ Set's window.url to location.
 
 ### findUi(semanticLabel[, type, returnArray])
 
-Find and return some UI that semantically matches `semanticLabel` where `semanticLabel` can be the elements `text`, `title`, `placeholder`, `aria-label`, `value`, or `alt` if the element is an `IMG`.
-
-Elements will then be filtered by `type` where `type` is one of:
+Elements will first be filtered by `type` where `type` is one of:
  - button: `<button>, <a>, ...`
  - label: `<label>, <span>, ...`
  - heading: `[role=heading], <h1>, <h2>, ...`
@@ -106,9 +104,15 @@ Elements will then be filtered by `type` where `type` is one of:
  - text: Anything.
  - all: Anything.
 
+And then filtered where they semantically match `semanticLabel` where `semanticLabel` can be the elements `text`, `title`, `placeholder`, `aria-label`, `value`, or `alt` if the element is an `IMG`.
+
+Also finds elements that have a referenced `<label for="{elementName}">` by the same method.
+
 A list of all the types can be found at [elementTypes.js](./elementTypes.js)
 
-By default, returns the best-match element, but you can get all of the ordered elements  by passing `true` for `returnArray`
+Matched elements will then by sorted by how likely they are what you are after.
+
+By default, returns the best-match element, but you can get all of the ordered elements by passing `true` for `returnArray`
 
 ### getLocation()
 

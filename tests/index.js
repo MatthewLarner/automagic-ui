@@ -40,6 +40,18 @@ window.onload = function(){
             });
     });
 
+    test('can find fields with labels with [for] attribute', function(t) {
+        t.plan(3);
+
+        driver()
+            .findUi('Some field', 'field')
+            .go(function(error, result) {
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'INPUT', 'got correct result');
+                t.equal(result.parentElement.previousElementSibling.textContent, 'Some Field', 'got correct label');
+            });
+    });
+
     test('can find elements with text in sub-elements', function(t) {
         t.plan(2);
 
@@ -57,32 +69,32 @@ window.onload = function(){
         driver()
             .findUi('out of scroll viewport')
             .go(function(error, result) {
-                t.ok(error, 'should error');
+                t.ok(error, 'out of scroll viewport - should error');
             });
 
         driver()
             .scrollTo('out of scroll viewport')
             .findUi('out of scroll viewport')
             .go(function(error, result) {
-                t.notOk(error, 'should not error');
+                t.notOk(error, 'out of scroll viewport - should not error');
             });
 
         driver()
             .findUi('out of browser viewport')
             .go(function(error, result) {
-                t.ok(error, 'should error');
+                t.ok(error, 'out of browser viewport - should error');
             });
 
         driver()
             .findUi('display none')
             .go(function(error, result) {
-                t.ok(error, 'should error');
+                t.ok(error, 'display none - should error');
             });
 
         driver()
             .findUi('visibility hiden')
             .go(function(error, result) {
-                t.ok(error, 'should error');
+                t.ok(error, 'visibility hiden - should error');
             });
     });
 
@@ -175,7 +187,7 @@ window.onload = function(){
                 t.plan(3);
 
                 t.notOk(error, 'should not error');
-                t.equal(result.tagName, 'LABEL', 'got a "button"');
+                t.equal(result.tagName, 'LABEL', 'got a label');
                 t.notEqual(result.getAttribute('role'), 'button', 'got correct "button"');
             });
     });
@@ -249,11 +261,27 @@ window.onload = function(){
                 subDriver.findUi('Bar 2')
             )
             .go(function(error, result) {
-                t.plan(3);
+                t.plan(4);
 
                 t.notOk(error, 'should not error');
                 t.equal(result.tagName, 'SPAN', 'got a "span"');
                 t.equal(result.textContent, 'Bar 2');
+                t.equal(result.parentElement.textContent, 'Foo 2 Bar 2');
+            });
+    });
+
+    test('in - cell with adjacent', function(t) {
+        driver()
+            .in('Foo 2 Bar 2', 'cell', subDriver =>
+                subDriver.findUi('Bar 2')
+            )
+            .go(function(error, result) {
+                t.plan(4);
+
+                t.notOk(error, 'should not error');
+                t.equal(result.tagName, 'SPAN', 'got a "span"');
+                t.equal(result.textContent, 'Bar 2');
+                t.equal(result.parentElement.textContent, 'Foo 2 Bar 2');
             });
     });
 

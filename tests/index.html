@@ -48,10 +48,16 @@
     <input placeholder="input with placeholder"/>
     <button aria-label="click me" value="i need a click">Clicky</button>
     <label role="button">I'm like a button</label>
-    <label>I'm like a button</label>
+    <label for="someField">I'm like a button</label>
     <form>
         <input type="text" name="title" placeholder="My [name] is 'title'">
     </form>
+    <div>
+        <label for="someField">Some Field</label>
+        <p>
+            <input name="someField">
+        </p>
+    </div>
     <button onclick=makeUi()>I make UI</button>,
     <button onclick=makeUiAsync()>I make UI eventually</button>,
     <h1><span>Decendent Text</span> Direct Text</h1>
@@ -69,17 +75,20 @@
         <tr>
             <td>Foo</td>
             <td><button class="action1">Action</button></td>
-            <td>Foo 1<span>Bar 1</span></td>
+            <td>Foo 1 <span>Bar 1</span></td>
+            <td>Baz 1 <span>Bar 1</span></td>
         </tr>
         <tr>
             <td>Bar</td>
             <td><button class="action2">Action</button></td>
-            <td>Foo 2<span>Bar 2</span></td>
+            <td>Foo 2 <span>Bar 2</span></td>
+            <td>Baz 2 <span>Bar 2</span></td>
         </tr>
         <tr>
             <td>Baz</td>
             <td><button class="action3">Action</button></td>
-            <td>Foo 3<span>Bar 3</span></td>
+            <td>Foo 3 <span>Bar 3</span></td>
+            <td>Baz 3 <span>Bar 3</span></td>
         </tr>
     </table>
 

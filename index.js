@@ -66,14 +66,6 @@ function _pressKeys(keys, done) {
     pressNextKey(0, done)
 }
 
-function findUi(currentContex, selectors) {
-    var candidates = Array.prototype.slice.call(currentContex.querySelectorAll(selectors));
-
-    return candidates.sort(function(a, b){
-            return !a.contains(b) ? -1 : 0;
-        }); // deeper elements take precedence.
-}
-
 function _navigate(location, previousElement, done) {
     var callbackTimer;
 
@@ -104,25 +96,16 @@ function checkMatchValue(targetValue, value){
     return targetValue && targetValue.toLowerCase().trim() === value.toLowerCase();
 }
 
-function isVisible(element){
-    if(element.getAttribute('aria-hidden') === 'true') {
-        return false;
-    }
-
-    var style = window.getComputedStyle(element);
-    return style.visibility !== 'hidden' && style.display !== 'none';
-}
-
-function getElementVisibleText(element, ignoreViewport){
+function getElementVisibleText(element, ignoreViewport, domQueries){
     return Array.from(element.childNodes).map(node => {
         if(node.nodeType !== 3){
-            return getElementVisibleText(node);
+            return getElementVisibleText(node, ignoreViewport, domQueries);
         }
 
         if(
             node.textContent &&
-            isVisible(element) &&
-            (ignoreViewport || !predator(element).hidden)
+            domQueries.isVisible(element) &&
+            (ignoreViewport || !domQueries.isObscured(element))
         ) {
             return node.textContent;
         }
@@ -133,45 +116,155 @@ function getElementVisibleText(element, ignoreViewport){
     .join('');
 }
 
-function matchElementValue(element, value, ignoreViewport) {
-    return (
+function matchAttributes(element, value){
+    if(
         checkMatchValue(element.getAttribute('title'), value) ||
         checkMatchValue(element.getAttribute('placeholder'), value) ||
         checkMatchValue(element.getAttribute('aria-label'), value) ||
         element.tagName === 'IMG' && checkMatchValue(element.getAttribute('alt'), value) ||
-        checkMatchValue(element.value, value) ||
-        isVisible(element) && (
-            checkMatchValue(getElementVisibleText(element, ignoreViewport), value) ||
-            // Elements beside labels
-            (
-                element.previousElementSibling &&
-                element.previousElementSibling.matches(types.label.join()) &&
-                window.getComputedStyle(element.previousElementSibling).display !== 'block' &&
-                checkMatchValue(getElementVisibleText(element.previousElementSibling, ignoreViewport), value)
-            ) ||
+        checkMatchValue(element.value, value)
+    ) {
+        return 1;
+    }
+}
 
-            // Direct-child text nodes
-            checkMatchValue(
-                Array.from(element.childNodes)
-                    .filter(node => node.nodeType === 3)
-                    .map(textNode => textNode.textContent)
-                    .join(''),
-                value
-            ) ||
+function matchTextContent(element, value, ignoreViewport, domQueries){
+    if(
+        checkMatchValue(element.textContent, value) &&
+        checkMatchValue(getElementVisibleText(element, ignoreViewport, domQueries), value)
+    ){
+        return 1;
+    }
+}
 
-            // Direct-child label-like nodes
-            Array.from(element.children)
-                .filter(child => child.matches(types.label.join()))
-                .some(childElement => checkMatchValue(getElementVisibleText(childElement, ignoreViewport), value))
+function matchBesideLabels(element, value, ignoreViewport, domQueries){
+    if(
+        element.previousElementSibling &&
+        element.previousElementSibling.matches(types.label.join()) &&
+        checkMatchValue(getElementVisibleText(element.previousElementSibling, ignoreViewport, domQueries), value)
+    ) {
+        return 4;
+    }
+}
+
+function isTextNode(node){
+    return node.nodeType === 3;
+}
+
+function matchDirectChildTextNodes(element, value, ignoreViewport, domQueries){
+    if(!ignoreViewport && domQueries.isObscured(element)){
+        return
+    }
+
+    var directChildText = Array.from(element.childNodes)
+        .filter(isTextNode)
+        .map(textNode => textNode.textContent)
+        .join('');
+
+    if(checkMatchValue(directChildText, value)){
+        return  2;
+    }
+}
+
+function matchDecendentLabels(element, value, ignoreViewport, domQueries){
+    if(
+        findMatchingElements(
+            value,
+            Array.from(element.childNodes).filter(node =>
+                node.matches &&
+                node.matches(types.label.join())
+            ),
+            ignoreViewport,
+            domQueries
+        ).length
+    ){
+        return 3
+    }
+}
+
+function matchLabelFor(element, value, ignoreViewport, domQueries){
+    var name = element.getAttribute('name');
+
+    if(
+        name &&
+        findMatchingElements(
+            value,
+            document.querySelectorAll('label[for="' + name + '"]'),
+            ignoreViewport,
+            domQueries
+        ).length
+    ){
+        return 3
+    }
+}
+
+function createCachedDomQueries(){
+    var isObscuredCache = new WeakMap();
+    var isVisibleCache = new WeakMap();
+
+    function isObscured(element){
+        if(isObscuredCache.has(element)){
+            return isObscuredCache.get(element);
+        }
+
+        isObscuredCache.set(element, predator(element).hidden);
+        return isObscured(element);
+    }
+
+    function isVisible(element){
+        if(isVisibleCache.has(element)){
+            return isVisibleCache.get(element)
+        }
+
+        if(element.getAttribute('aria-hidden') === 'true') {
+            return false;
+        }
+
+        var style = window.getComputedStyle(element);
+        isVisibleCache.set(element, style.visibility !== 'hidden' && style.display !== 'none');
+        return isVisible(element);
+    }
+
+    return {
+        isObscured,
+        isVisible
+    }
+}
+
+function matchElementValue(element, value, ignoreViewport, domQueries) {
+    if(!domQueries){
+        domQueries = createCachedDomQueries();
+    }
+
+    return (
+        // This check is fast, so we optimize by checking it first
+        matchAttributes(element, value) ||
+        domQueries.isVisible(element) &&
+        (
+            matchTextContent(element, value, ignoreViewport, domQueries) ||
+            matchDirectChildTextNodes(element, value, ignoreViewport, domQueries) ||
+            matchLabelFor(element, value, ignoreViewport, domQueries) ||
+            matchDecendentLabels(element, value, ignoreViewport, domQueries) ||
+            matchBesideLabels(element, value, ignoreViewport, domQueries)
         )
     );
 }
 
-function findMatchingElements(value, type, elementsList, ignoreViewport) {
+function findMatchingElements(value, elementsList, ignoreViewport, domQueries) {
+    if(!domQueries){
+        domQueries = createCachedDomQueries();
+    }
+
     return Array.prototype.slice.call(elementsList)
-        .filter(function(element) {
-            return matchElementValue(element, value, ignoreViewport);
-        });
+        .map(function(element) {
+            var weighting = matchElementValue(element, value, ignoreViewport, domQueries);
+            if(weighting){
+                return [weighting, element]
+            };
+        })
+        .filter(result => result)
+        .sort((a, b) => a[0] - b[0])
+        .map(result => result [1]);
 }
 
 function getElementTextWeight(element) {
@@ -201,16 +294,23 @@ function _findAllUi(value, type, ignoreViewport, done){
         return done(new Error(type + ' is not a valid ui type'));
     }
 
-    var elements = findUi(this.currentContext, elementTypes);
+    var elements = Array.from(this.currentContext.querySelectorAll(elementTypes))
 
     if(!elements.length) {
         return done(new Error(noElementOfType + type));
     }
 
-    var results = findMatchingElements(value, type, elements, ignoreViewport)
-        .sort(function(a, b) {
-            return getElementTextWeight(b) - getElementTextWeight(a);
-        });
+    var results = findMatchingElements(value, elements, ignoreViewport)
+        .sort(function(a, b){
+            var aTypeIndex = elementTypes.findIndex(type => a.matches(type));
+            var bTypeIndex = elementTypes.findIndex(type => b.matches(type));
+            aTypeIndex = aTypeIndex < 0 ? Infinity : aTypeIndex;
+            bTypeIndex = bTypeIndex < 0 ? Infinity : bTypeIndex;
+            return aTypeIndex - bTypeIndex;
+        })
+        .sort(function(a, b){
+            return a.contains(b) ? 1 : b.contains(a) ? -1 : 0;
+        })
 
     done(null, results);
 }
